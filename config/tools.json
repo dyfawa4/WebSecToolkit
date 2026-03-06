@@ -1,0 +1,295 @@
+{
+  "tools": {
+    "port_scanner": {
+      "nmap": {
+        "path": "tools/nmap/nmap.exe",
+        "name": "Nmap",
+        "description": "网络发现和安全审计工具",
+        "type": "executable",
+        "version": "7.94",
+        "category": "network"
+      },
+      "naabu": {
+        "path": "tools/naabu/naabu.exe",
+        "name": "Naabu",
+        "description": "快速端口扫描器",
+        "type": "executable",
+        "version": "2.1.0",
+        "category": "network"
+      }
+    },
+    "subdomain": {
+      "subfinder": {
+        "path": "tools/subfinder/subfinder.exe",
+        "name": "Subfinder",
+        "description": "快速子域名发现工具",
+        "type": "executable",
+        "version": "2.5.0",
+        "category": "recon"
+      },
+      "amass": {
+        "path": "tools/amass/amass_Windows_amd64/amass.exe",
+        "name": "Amass",
+        "description": "综合OSINT框架",
+        "type": "executable",
+        "version": "3.21.0",
+        "category": "recon"
+      },
+      "assetfinder": {
+        "path": "tools/assetfinder/assetfinder.exe",
+        "name": "Assetfinder",
+        "description": "查找与域名相关的子域名和资产",
+        "type": "executable",
+        "version": "0.1.0",
+        "category": "recon"
+      }
+    },
+    "directory": {
+      "dirsearch": {
+        "path": "tools/dirsearch/dirsearch-master/dirsearch.py",
+        "name": "Dirsearch",
+        "description": "Python目录扫描器",
+        "type": "python",
+        "version": "0.4.0",
+        "category": "web"
+      },
+      "gobuster": {
+        "path": "tools/gobuster/gobuster.exe",
+        "name": "Gobuster",
+        "description": "目录/文件/DNS爆破工具",
+        "type": "executable",
+        "version": "3.6.0",
+        "category": "web"
+      },
+      "ffuf": {
+        "path": "tools/ffuf/ffuf.exe",
+        "name": "FFUF",
+        "description": "快速Web模糊测试工具",
+        "type": "executable",
+        "version": "2.0.0",
+        "category": "web"
+      }
+    },
+    "fingerprint": {
+      "httpx": {
+        "path": "tools/httpx/httpx.exe",
+        "name": "HTTPX",
+        "description": "HTTP工具包",
+        "type": "executable",
+        "version": "1.3.0",
+        "category": "web"
+      },
+      "nuclei": {
+        "path": "tools/nuclei/nuclei.exe",
+        "name": "Nuclei",
+        "description": "基于模板的漏洞扫描器",
+        "type": "executable",
+        "version": "3.0.0",
+        "category": "scanner",
+        "templates": "tools/nuclei-templates"
+      }
+    },
+    "ssl_analyzer": {
+      "tlsx": {
+        "path": "tools/tlsx/tlsx.exe",
+        "name": "TLSX",
+        "description": "TLS配置扫描器",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "crypto"
+      }
+    },
+    "sqli": {
+      "sqlmap": {
+        "path": "tools/sqlmap/sqlmap.py",
+        "name": "SQLMap",
+        "description": "自动SQL注入和数据库接管工具",
+        "type": "python",
+        "version": "1.7.0",
+        "category": "exploit"
+      }
+    },
+    "xss": {
+      "dalfox": {
+        "path": "tools/dalfox/dalfox.exe",
+        "name": "Dalfox",
+        "description": "XSS扫描和分析工具",
+        "type": "executable",
+        "version": "2.8.0",
+        "category": "exploit"
+      }
+    },
+    "hash_crack": {
+      "john": {
+        "path": "tools/john/JtR/run/john.exe",
+        "name": "John the Ripper",
+        "description": "快速密码破解器",
+        "type": "executable",
+        "version": "1.9.0",
+        "category": "password"
+      },
+      "hashcat": {
+        "path": "tools/hashcat/hashcat-6.2.6/hashcat.exe",
+        "name": "Hashcat",
+        "description": "高级密码恢复工具",
+        "type": "executable",
+        "version": "6.2.6",
+        "category": "password"
+      }
+    },
+    "online_brute": {
+      "hydra": {
+        "path": "tools/hydra/hydra.exe",
+        "name": "THC-Hydra",
+        "description": "网络登录破解器",
+        "type": "executable",
+        "version": "9.5.0",
+        "category": "password"
+      }
+    },
+    "cve_search": {
+      "searchsploit": {
+        "path": "tools/exploit/searchsploit.py",
+        "name": "SearchSploit",
+        "description": "Exploit-DB命令行搜索工具",
+        "type": "python",
+        "version": "2023.0",
+        "category": "exploit"
+      }
+    },
+    "batch_scan": {
+      "nuclei": {
+        "path": "tools/nuclei/nuclei.exe",
+        "name": "Nuclei",
+        "description": "批量漏洞扫描",
+        "type": "executable",
+        "version": "3.0.0",
+        "category": "scanner",
+        "templates": "tools/nuclei-templates"
+      }
+    },
+    "http_proxy": {
+      "chisel": {
+        "path": "tools/proxy/chisel.exe",
+        "name": "Chisel",
+        "description": "快速TCP隧道",
+        "type": "executable",
+        "version": "1.9.0",
+        "category": "proxy"
+      },
+      "gost": {
+        "path": "tools/proxy/gost/gost-windows-amd64.exe",
+        "name": "Gost",
+        "description": "简单的安全隧道",
+        "type": "executable",
+        "version": "2.11.0",
+        "category": "proxy"
+      }
+    },
+    "internal_info": {
+      "bloodhound": {
+        "path": "tools/internal/BloodHound.py-master/bloodhound.py",
+        "name": "BloodHound.py",
+        "description": "Active Directory关系映射",
+        "type": "python",
+        "version": "1.0.0",
+        "category": "internal"
+      },
+      "seatbelt": {
+        "path": "tools/dotnet/Seatbelt.exe",
+        "name": "Seatbelt",
+        "description": "Windows安全配置审计工具",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "internal"
+      },
+      "rubeus": {
+        "path": "tools/dotnet/Rubeus.exe",
+        "name": "Rubeus",
+        "description": "Kerberos攻击工具",
+        "type": "executable",
+        "version": "2.0.0",
+        "category": "internal"
+      }
+    },
+    "credential": {
+      "mimikatz": {
+        "path": "tools/internal/mimikatz/x64/mimikatz.exe",
+        "name": "Mimikatz",
+        "description": "Windows凭据提取",
+        "type": "executable",
+        "version": "2.2.0",
+        "category": "internal"
+      }
+    },
+    "tunnel": {
+      "chisel": {
+        "path": "tools/proxy/chisel.exe",
+        "name": "Chisel",
+        "description": "TCP隧道",
+        "type": "executable",
+        "version": "1.9.0",
+        "category": "proxy"
+      },
+      "gost": {
+        "path": "tools/proxy/gost/gost-windows-amd64.exe",
+        "name": "Gost",
+        "description": "安全隧道",
+        "type": "executable",
+        "version": "2.11.0",
+        "category": "proxy"
+      }
+    },
+    "leak": {
+      "gitleaks": {
+        "path": "tools/leak/gitleaks.exe",
+        "name": "GitLeaks",
+        "description": "Git和文件系统密钥检测",
+        "type": "executable",
+        "version": "8.0.0",
+        "category": "scanner"
+      }
+    },
+    "scanner": {
+      "whatweb": {
+        "path": "tools/scanner/WhatWeb-master/whatweb",
+        "name": "WhatWeb",
+        "description": "Web技术识别",
+        "type": "ruby",
+        "version": "0.5.0",
+        "category": "scanner"
+      }
+    },
+    "dns": {
+      "dnsx": {
+        "path": "tools/dnsx/dnsx.exe",
+        "name": "DNSX",
+        "description": "DNS工具包",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "network"
+      }
+    },
+    "http_probe": {
+      "httprobe": {
+        "path": "tools/httprobe/httprobe.exe",
+        "name": "Httprobe",
+        "description": "HTTP探测工具",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "recon"
+      }
+    }
+  },
+  "categories": {
+    "network": "网络扫描",
+    "recon": "信息收集",
+    "web": "Web安全",
+    "scanner": "漏洞扫描",
+    "exploit": "漏洞利用",
+    "password": "密码破解",
+    "proxy": "代理隧道",
+    "internal": "内网渗透",
+    "crypto": "加密解密"
+  }
+}

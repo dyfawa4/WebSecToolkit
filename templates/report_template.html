@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全测试报告 - {PROJECT_NAME}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #1e3c72;
+            border-bottom: 3px solid #1e3c72;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            color: #2a5298;
+            margin: 20px 0 10px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .info-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        .info-item value {
+            display: block;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+        .severity {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .severity-critical {
+            background: #dc3545;
+            color: white;
+        }
+        .severity-high {
+            background: #fd7e14;
+            color: white;
+        }
+        .severity-medium {
+            background: #ffc107;
+            color: #333;
+        }
+        .severity-low {
+            background: #28a745;
+            color: white;
+        }
+        .severity-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .vulnerability {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .vulnerability-header {
+            background: #f8f9fa;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .vulnerability-body {
+            padding: 20px;
+        }
+        .vulnerability-body h4 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #1e3c72;
+            color: white;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+        .stat-card.critical { background: #dc3545; }
+        .stat-card.high { background: #fd7e14; }
+        .stat-card.medium { background: #ffc107; color: #333; }
+        .stat-card.low { background: #28a745; }
+        .stat-card.info { background: #17a2b8; }
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        @media print {
+            .section { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>安全测试报告</h1>
+            <div class="subtitle">{PROJECT_NAME}</div>
+            <div class="subtitle">{REPORT_DATE}</div>
+        </div>
+
+        <div class="section">
+            <h2>📋 项目概述</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>项目名称</label>
+                    <value>{PROJECT_NAME}</value>
+                </div>
+                <div class="info-item">
+                    <label>测试目标</label>
+                    <value>{TARGET}</value>
+                </div>
+                <div class="info-item">
+                    <label>测试时间</label>
+                    <value>{TEST_DATE}</value>
+                </div>
+                <div class="info-item">
+                    <label>测试人员</label>
+                    <value>{TESTER}</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 漏洞统计</h2>
+            <div class="summary-stats">
+                <div class="stat-card critical">
+                    <div class="number">{CRITICAL_COUNT}</div>
+                    <div class="label">严重</div>
+                </div>
+                <div class="stat-card high">
+                    <div class="number">{HIGH_COUNT}</div>
+                    <div class="label">高危</div>
+                </div>
+                <div class="stat-card medium">
+                    <div class="number">{MEDIUM_COUNT}</div>
+                    <div class="label">中危</div>
+                </div>
+                <div class="stat-card low">
+                    <div class="number">{LOW_COUNT}</div>
+                    <div class="label">低危</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="number">{INFO_COUNT}</div>
+                    <div class="label">信息</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 漏洞详情</h2>
+            {VULNERABILITIES}
+        </div>
+
+        <div class="section">
+            <h2>📝 测试范围</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>目标</th>
+                        <th>类型</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {SCOPE_TABLE}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>💡 安全建议</h2>
+            <h3>1. 输入验证</h3>
+            <p>对所有用户输入进行严格的验证和过滤，使用白名单机制。</p>
+            
+            <h3>2. 身份认证</h3>
+            <p>实施强密码策略，启用多因素认证，限制登录尝试次数。</p>
+            
+            <h3>3. 访问控制</h3>
+            <p>实施最小权限原则，定期审查权限配置。</p>
+            
+            <h3>4. 数据加密</h3>
+            <p>敏感数据传输使用TLS加密，存储使用强加密算法。</p>
+            
+            <h3>5. 安全监控</h3>
+            <p>部署入侵检测系统，建立安全事件响应机制。</p>
+        </div>
+
+        <div class="footer">
+            <p>本报告由 Security Toolkit 自动生成</p>
+            <p>报告生成时间: {REPORT_DATE}</p>
+            <p>© 2024 Security Toolkit. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
