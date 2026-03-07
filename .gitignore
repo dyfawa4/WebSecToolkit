@@ -90,11 +90,7 @@ desktop.ini
 
 # Build outputs
 *.exe
-
-# Large tools directories (download separately)
-tools/leak/trufflehog/
-tools/leak/gitleaks/
-tools/nmap/
+!WebSecToolkit.exe
 
 # Temporary files
 *.tmp
