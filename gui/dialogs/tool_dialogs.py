@@ -2,14 +2,16 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QLineEdit,
     QFileDialog, QMessageBox, QWidget, QProgressDialog, QApplication,
-    QComboBox
+    QComboBox, QGroupBox, QGridLayout, QFrame, QTextEdit
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QFont, QColor
 import os
 import shutil
 import sys
 import subprocess
 from pathlib import Path
+import json
 
 
 class ToolLoadWorker(QThread):
@@ -76,8 +78,10 @@ class ToolLoadWorker(QThread):
 
 
 class ToolTestWorker(QThread):
-    progress_updated = pyqtSignal(int, int)
+    progress_updated = pyqtSignal(int, int, str)
     test_finished = pyqtSignal(list)
+    
+    SKIP_TEST_TOOLS = ['mimilib', 'kekeo', 'sharpup', 'sharpwmi', 'mimikatz', 'seatbelt', 'rubeus']
     
     def __init__(self, tools_data):
         super().__init__()
@@ -92,9 +96,9 @@ class ToolTestWorker(QThread):
             if self._is_cancelled:
                 break
             
-            self.progress_updated.emit(i + 1, total)
+            self.progress_updated.emit(i + 1, total, f"正在测试: {tool_name}")
             
-            if not tool_path:
+            if not tool_path or tool_path == "正在检测...":
                 results.append(f"- {tool_name}: 未配置")
                 continue
             
@@ -102,26 +106,29 @@ class ToolTestWorker(QThread):
                 results.append(f"✗ {tool_name}: 文件不存在")
                 continue
             
+            if tool_name.lower() in self.SKIP_TEST_TOOLS:
+                results.append(f"⚠ {tool_name}: 已跳过(可能被杀软拦截)")
+                continue
+            
             try:
                 if tool_path.endswith('.py'):
                     cmds = [
                         f'"{sys.executable}" "{tool_path}" --help',
                         f'"{sys.executable}" "{tool_path}" -h',
-                        f'"{sys.executable}" "{tool_path}" --version',
                     ]
                 else:
                     cmds = [
                         f'"{tool_path}" --help',
                         f'"{tool_path}" -h',
                         f'"{tool_path}" --version',
-                        f'"{tool_path}" -version',
-                        f'"{tool_path}" -V',
                     ]
                 
                 success = False
                 last_error = ""
                 
                 for cmd in cmds:
+                    if self._is_cancelled:
+                        break
                     try:
                         process = subprocess.Popen(
                             cmd,
@@ -133,7 +140,7 @@ class ToolTestWorker(QThread):
                             creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
                         )
                         
-                        stdout, stderr = process.communicate(timeout=5)
+                        stdout, stderr = process.communicate(timeout=3)
                         
                         output = stdout.lower() + stderr.lower()
                         if any(keyword in output for keyword in ['usage', 'options', 'version', 'usage:', 'flags:', 'arguments:', 'help']):
@@ -150,16 +157,16 @@ class ToolTestWorker(QThread):
                             pass
                         last_error = "超时"
                     except PermissionError:
-                        last_error = "权限被拒绝(可能被杀毒软件拦截)"
+                        last_error = "权限被拒绝"
                         break
                     except OSError as e:
                         if "WinError 5" in str(e) or "拒绝访问" in str(e):
-                            last_error = "权限被拒绝(可能被杀毒软件拦截)"
+                            last_error = "权限被拒绝"
                         else:
-                            last_error = str(e)[:50]
+                            last_error = str(e)[:30]
                         break
                     except Exception as e:
-                        last_error = str(e)[:50]
+                        last_error = str(e)[:30]
                 
                 if success:
                     results.append(f"✓ {tool_name}: 正常")
@@ -169,18 +176,18 @@ class ToolTestWorker(QThread):
                     else:
                         results.append(f"✓ {tool_name}: 已安装")
             except PermissionError:
-                results.append(f"✗ {tool_name}: 权限被拒绝(可能被杀毒软件拦截)")
+                results.append(f"✗ {tool_name}: 权限被拒绝")
             except OSError as e:
                 if "WinError 5" in str(e) or "拒绝访问" in str(e):
-                    results.append(f"✗ {tool_name}: 权限被拒绝(可能被杀毒软件拦截)")
+                    results.append(f"✗ {tool_name}: 权限被拒绝")
                 else:
-                    results.append(f"✗ {tool_name}: {str(e)[:50]}")
+                    results.append(f"✗ {tool_name}: {str(e)[:30]}")
             except FileNotFoundError:
                 results.append(f"✗ {tool_name}: 文件不存在")
             except Exception as e:
                 error_msg = str(e)
-                if len(error_msg) > 50:
-                    error_msg = error_msg[:50] + "..."
+                if len(error_msg) > 30:
+                    error_msg = error_msg[:30] + "..."
                 results.append(f"✗ {tool_name}: {error_msg}")
         
         self.test_finished.emit(results)
@@ -257,8 +264,21 @@ class ToolManagerDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         
-        desc_label = QLabel("管理外部安全工具路径配置 - 从 tools.json 加载")
-        layout.addWidget(desc_label)
+        stats_group = QGroupBox("工具统计")
+        stats_layout = QGridLayout(stats_group)
+        
+        self._total_label = QLabel("总计: 0")
+        self._installed_label = QLabel("已安装: 0")
+        self._missing_label = QLabel("缺失: 0")
+        
+        self._total_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        self._installed_label.setStyleSheet("color: #22c55e; font-weight: bold; font-size: 14px;")
+        self._missing_label.setStyleSheet("color: #ef4444; font-weight: bold; font-size: 14px;")
+        
+        stats_layout.addWidget(self._total_label, 0, 0)
+        stats_layout.addWidget(self._installed_label, 0, 1)
+        stats_layout.addWidget(self._missing_label, 0, 2)
+        layout.addWidget(stats_group)
         
         filter_layout = QHBoxLayout()
         
@@ -302,34 +322,21 @@ class ToolManagerDialog(QDialog):
         
         layout.addWidget(self._tools_table)
         
-        stats_label = QLabel(f"共 {len(self._common_tools)} 个工具")
-        self._stats_label = stats_label
-        layout.addWidget(stats_label)
-        
         btn_layout = QHBoxLayout()
         
         refresh_btn = QPushButton("刷新配置")
         refresh_btn.clicked.connect(self._refresh_config)
         
-        add_btn = QPushButton("添加工具")
-        add_btn.clicked.connect(self._add_tool)
-        
         auto_detect_btn = QPushButton("自动检测")
         auto_detect_btn.setObjectName("secondaryButton")
         auto_detect_btn.clicked.connect(self._auto_detect_tools)
-        
-        download_btn = QPushButton("下载工具")
-        download_btn.setObjectName("secondaryButton")
-        download_btn.clicked.connect(self._download_tools)
         
         test_btn = QPushButton("测试工具")
         test_btn.setObjectName("secondaryButton")
         test_btn.clicked.connect(self._test_tools)
         
         btn_layout.addWidget(refresh_btn)
-        btn_layout.addWidget(add_btn)
         btn_layout.addWidget(auto_detect_btn)
-        btn_layout.addWidget(download_btn)
         btn_layout.addWidget(test_btn)
         btn_layout.addStretch()
         
@@ -343,18 +350,33 @@ class ToolManagerDialog(QDialog):
     def _load_tools_async(self):
         self._tools_table.setRowCount(len(self._common_tools))
         
+        installed_count = 0
+        missing_count = 0
+        
         for row, (tool_id, tool_desc, config_path) in enumerate(self._common_tools):
-            self._tools_table.setItem(row, 0, QTableWidgetItem(tool_desc))
+            name_item = QTableWidgetItem(tool_desc)
+            self._tools_table.setItem(row, 0, name_item)
             
             if config_path:
                 full_path = str(self._tools_dir.parent / config_path) if not Path(config_path).is_absolute() else config_path
-                self._tools_table.setItem(row, 1, QTableWidgetItem(full_path))
-                status = "✓ 已配置" if Path(full_path).exists() else "✗ 文件不存在"
+                path_item = QTableWidgetItem(full_path)
+                self._tools_table.setItem(row, 1, path_item)
+                
+                if Path(full_path).exists():
+                    status_item = QTableWidgetItem("✓ 已安装")
+                    status_item.setForeground(QColor("#22c55e"))
+                    installed_count += 1
+                else:
+                    status_item = QTableWidgetItem("✗ 缺失")
+                    status_item.setForeground(QColor("#ef4444"))
+                    missing_count += 1
             else:
-                self._tools_table.setItem(row, 1, QTableWidgetItem("正在检测..."))
-                status = "..."
+                self._tools_table.setItem(row, 1, QTableWidgetItem("未配置"))
+                status_item = QTableWidgetItem("✗ 未配置")
+                status_item.setForeground(QColor("#f59e0b"))
+                missing_count += 1
             
-            self._tools_table.setItem(row, 2, QTableWidgetItem(status))
+            self._tools_table.setItem(row, 2, status_item)
             
             browse_btn = QPushButton("浏览")
             browse_btn.setFixedWidth(90)
@@ -362,7 +384,13 @@ class ToolManagerDialog(QDialog):
             browse_btn.clicked.connect(lambda checked, r=row, t=tool_id: self._browse_tool(r, t))
             self._tools_table.setCellWidget(row, 3, browse_btn)
         
-        self._detect_missing_tools()
+        self._update_stats(installed_count, missing_count)
+    
+    def _update_stats(self, installed: int, missing: int):
+        total = installed + missing
+        self._total_label.setText(f"总计: {total}")
+        self._installed_label.setText(f"已安装: {installed}")
+        self._missing_label.setText(f"缺失: {missing}")
     
     def _detect_missing_tools(self):
         tools_to_detect = []
@@ -410,6 +438,9 @@ class ToolManagerDialog(QDialog):
         search_text = self._search_input.text().lower()
         
         visible_count = 0
+        installed_count = 0
+        missing_count = 0
+        
         for row in range(self._tools_table.rowCount()):
             if row >= len(self._common_tools):
                 continue
@@ -431,8 +462,15 @@ class ToolManagerDialog(QDialog):
             self._tools_table.setRowHidden(row, not visible)
             if visible:
                 visible_count += 1
+                status_item = self._tools_table.item(row, 2)
+                if status_item:
+                    status_text = status_item.text()
+                    if "✓" in status_text:
+                        installed_count += 1
+                    else:
+                        missing_count += 1
         
-        self._stats_label.setText(f"显示 {visible_count} / {self._tools_table.rowCount()} 个工具")
+        self._update_stats(installed_count, missing_count)
     
     def _refresh_config(self):
         self._common_tools = self._load_tools_from_config()
@@ -444,7 +482,6 @@ class ToolManagerDialog(QDialog):
             self._category_combo.addItem(cat_name, cat_id)
         
         self._load_tools_async()
-        self._stats_label.setText(f"共 {len(self._common_tools)} 个工具")
         QMessageBox.information(self, "刷新完成", f"已重新加载配置，共 {len(self._common_tools)} 个工具")
     
     def _find_tool(self, tool_name: str) -> str:
@@ -546,14 +583,19 @@ class ToolManagerDialog(QDialog):
         for row in range(self._tools_table.rowCount()):
             desc_item = self._tools_table.item(row, 0)
             path_item = self._tools_table.item(row, 1)
-            tool_name = desc_item.text().split(" - ")[0].lower()
-            tool_path = path_item.text()
-            tools_data.append((tool_name, tool_path))
+            if desc_item and path_item:
+                tool_name = desc_item.text().split(" - ")[0].lower()
+                tool_path = path_item.text()
+                tools_data.append((tool_name, tool_path))
+        
+        if not tools_data:
+            QMessageBox.information(self, "提示", "没有工具需要测试")
+            return
         
         total_tools = len(tools_data)
         self._progress = QProgressDialog("正在测试工具...", "取消", 0, total_tools, self)
         self._progress.setWindowTitle("测试进度")
-        self._progress.setWindowModality(Qt.WindowModality.WindowModal)
+        self._progress.setWindowModality(Qt.WindowModality.ApplicationModal)
         self._progress.setMinimumDuration(0)
         self._progress.setValue(0)
         
@@ -561,16 +603,57 @@ class ToolManagerDialog(QDialog):
         self._worker.progress_updated.connect(self._on_progress_updated)
         self._worker.test_finished.connect(self._on_test_finished)
         self._progress.canceled.connect(self._worker.cancel)
+        self._worker.finished.connect(self._on_worker_finished)
         self._worker.start()
     
-    def _on_progress_updated(self, current, total):
+    def _on_progress_updated(self, current, total, message):
         if hasattr(self, '_progress'):
             self._progress.setValue(current)
+            self._progress.setLabelText(message)
+    
+    def _on_worker_finished(self):
+        if hasattr(self, '_progress') and self._progress:
+            try:
+                self._progress.close()
+            except Exception:
+                pass
+        if hasattr(self, '_worker'):
+            try:
+                self._worker.deleteLater()
+            except Exception:
+                pass
     
     def _on_test_finished(self, results):
-        if hasattr(self, '_progress'):
-            self._progress.close()
-        QMessageBox.information(self, "测试结果", "\n".join(results))
+        try:
+            if hasattr(self, '_progress') and self._progress:
+                self._progress.close()
+        except Exception:
+            pass
+        
+        try:
+            result_dialog = QDialog(self)
+            result_dialog.setWindowTitle("测试结果")
+            result_dialog.setMinimumSize(600, 500)
+            
+            layout = QVBoxLayout(result_dialog)
+            
+            result_text = QTextEdit()
+            result_text.setReadOnly(True)
+            result_text.setFont(QFont("Consolas", 10))
+            result_text.setPlainText("\n".join(results))
+            layout.addWidget(result_text)
+            
+            btn_layout = QHBoxLayout()
+            btn_layout.addStretch()
+            
+            close_btn = QPushButton("关闭")
+            close_btn.clicked.connect(result_dialog.accept)
+            btn_layout.addWidget(close_btn)
+            layout.addLayout(btn_layout)
+            
+            result_dialog.exec()
+        except Exception as e:
+            QMessageBox.information(self, "测试完成", f"测试完成\n\n结果:\n" + "\n".join(results[:20]))
     
     def _filter_tools(self, text: str):
         self._filter_by_category(self._category_combo.currentIndex())

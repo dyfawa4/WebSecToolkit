@@ -11,6 +11,7 @@
 
 **WebSec Toolkit** is a comprehensive Web Security Integrated Tool designed for penetration testers, security researchers, and bug bounty hunters. It provides a user-friendly GUI interface that integrates multiple popular security tools, enabling efficient security assessments and vulnerability discovery.
 
+![Version](https://img.shields.io/badge/Version-v1.01-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.6+-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
@@ -19,40 +20,112 @@
 ### Features
 
 #### 🔍 Information Gathering
-- **Subdomain Enumeration**: Subfinder, Amass, Assetfinder
-- **Port Scanning**: Nmap, Naabu
-- **DNS Enumeration**: DNSX
-- **HTTP Probing**: HTTPX, Httprobe
+- **Port Scanning**: Nmap, Naabu, RustScan, Masscan
+- **Subdomain Enumeration**: Subfinder, Subdominator, Chaos, Assetfinder
+- **Directory Scanning**: Dirsearch, Gobuster, FFUF, Feroxbuster
+- **Fingerprint Recognition**: WhatWeb, HTTPX
+- **SSL/TLS Analysis**: TLSX
+- **Email Collector**: Email enumeration and validation
 
 #### 🌐 Web Security
-- **Directory Scanning**: Dirsearch, Gobuster, FFUF
-- **Fingerprint Recognition**: WhatWeb, HTTPX
-- **Technology Detection**: Wappalyzer-style analysis
+- **SQL Injection**: SQLMap integration
+- **XSS Scanning**: Dalfox
+- **LFI/RFI**: Local/Remote File Inclusion testing
+- **RCE**: Remote Code Execution testing
+- **SSRF**: Server-Side Request Forgery
+- **XXE**: XML External Entity injection
+- **SSTI**: Server-Side Template Injection
+- **CSRF**: Cross-Site Request Forgery analysis
+- **API Security**: API vulnerability testing
+- **Framework Vulnerabilities**: Common framework exploits
+- **Authentication Vulnerabilities**: Auth bypass testing
+- **File Vulnerabilities**: Upload/Include vulnerabilities
+- **Cache Poisoning**: Web cache exploitation
+- **HTTP Smuggling**: Request smuggling detection
+- **Open Redirect**: Redirect vulnerability scanning
+- **Clickjacking**: UI redress attack testing
+- **Business Logic**: Logic flaw detection
+- **JWT Security**: JWT vulnerability analysis
+- **Supply Chain**: Dependency vulnerability scanning
+- **Prototype Pollution**: JavaScript prototype analysis
+- **Cloud Security**: Cloud metadata exploitation
+- **WebSocket Security**: WebSocket vulnerability testing
+- **AI Security**: AI/LLM application security testing
 
 #### 🔓 Vulnerability Scanning
 - **Template-based Scanning**: Nuclei
-- **SQL Injection**: SQLMap
-- **XSS Scanning**: Dalfox
-- **SSL/TLS Analysis**: TLSX
 - **CVE Search**: SearchSploit
+- **Batch Scanning**: Multi-target vulnerability scanning
+- **PoC Management**: Proof of Concept management
+- **Exploit Search**: Exploit database search
 
-#### 🔑 Password Cracking
+#### 🔑 Password Attacks
 - **Hash Cracking**: Hashcat, John the Ripper
 - **Online Brute Force**: THC-Hydra
+- **Hash Identification**: Automatic hash type detection
+- **Password Generator**: Secure password generation
 
 #### 🔒 Internal Network Penetration
-- **Information Gathering**: Seatbelt, BloodHound
+- **Information Gathering**: Seatbelt, system info collection
 - **Credential Extraction**: Mimikatz
 - **Kerberos Attacks**: Rubeus
+- **Lateral Movement**: Network pivoting tools
+- **Domain Attacks**: Active Directory exploitation
+- **ADCS Attacks**: Certificate Services attacks
+- **Evasion**: AV/EDS bypass techniques
+- **Exchange**: Microsoft Exchange exploitation
+- **SharePoint**: SharePoint vulnerability testing
+- **Persistence**: Persistence mechanism management
+- **Privilege Escalation**: Local privilege escalation
 
 #### 🚇 Proxy & Tunneling
-- **TCP Tunneling**: Chisel
-- **Secure Tunneling**: Gost
+- **HTTP Proxy**: Built-in HTTP proxy
+- **TCP Tunnel**: Chisel
+- **Secure Tunnel**: Gost
+- **Reverse Proxy**: Reverse connection proxy
 
-#### 📊 Report Generation
-- **Multiple Formats**: HTML, PDF, DOCX, Markdown
-- **Customizable Templates**: Professional report templates
-- **Data Export**: JSON, CSV, XML
+#### 🤖 AI Assistant
+- **Multi-Model Support**: OpenAI, Claude, DeepSeek, Qwen, local models
+- **Security Analysis**: AI-powered vulnerability analysis
+- **Code Review**: Security code review assistance
+- **Report Generation**: AI-assisted report writing
+- **Chat Interface**: Interactive security consultation
+
+#### �️ Utility Tools
+- **IP Tools**: IP address analysis and calculation
+- **HTTP Tools**: HTTP request building and testing
+- **JSON Tools**: JSON formatting and analysis
+- **Regex Tools**: Regular expression testing
+- **Time Tools**: Timestamp conversion
+- **Diff Tools**: Text comparison
+
+#### 🔧 Encoding & Crypto
+- **Base Encoding**: Base64, Base32, Base58, Base85
+- **URL Encoding**: URL encode/decode
+- **Hash Calculator**: Multiple hash algorithms
+- **JWT Tools**: JWT encode/decode/forgery
+- **Cryptography**: Encryption/decryption tools
+- **Classic Ciphers**: Caesar, Vigenère, etc.
+
+#### 📦 Payload Generation
+- **Payload Generator**: Custom payload creation
+- **Encoder**: Payload encoding and obfuscation
+- **Exploit DB**: Exploit database search
+- **Reverse Shell**: Reverse shell generator
+- **Webshell**: Webshell management
+- **MSF Payload**: Metasploit payload generation
+
+#### 📊 Report & Project Management
+- **Password Generator**: Custom wordlist generation
+- **Username Generator**: Username enumeration lists
+- **Directory Generator**: Path wordlist creation
+- **Subdomain Generator**: Subdomain wordlist creation
+- **Dictionary Manager**: Wordlist management
+- **Report Generator**: Professional security reports
+- **Project Management**: Engagement tracking
+- **Data Export**: Multiple export formats
+- **Vulnerability Statistics**: Finding analytics
+- **History**: Operation history tracking
 
 ### Installation
 
@@ -104,15 +177,18 @@ PyYAML>=6.0.0
 |----------|------|-------------|
 | Network Scanning | Nmap | Network discovery and security auditing |
 | Network Scanning | Naabu | Fast port scanner |
+| Network Scanning | RustScan | Modern port scanner |
+| Network Scanning | Masscan | Mass IP port scanner |
 | Information Gathering | Subfinder | Subdomain discovery tool |
-| Information Gathering | Amass | In-depth Attack Surface Mapping |
 | Information Gathering | Assetfinder | Find domains and subdomains |
 | Web Scanning | Dirsearch | Directory/file scanner |
 | Web Scanning | Gobuster | Directory/DNS/VHost busting tool |
 | Web Scanning | FFUF | Fast Web Fuzzer |
+| Web Scanning | Feroxbuster | Fast, simple, recursive content discovery |
 | Vulnerability Scanning | Nuclei | Template-based vulnerability scanner |
 | Vulnerability Scanning | SQLMap | Automatic SQL injection tool |
 | Vulnerability Scanning | Dalfox | XSS scanning and analysis tool |
+| Vulnerability Scanning | SearchSploit | Exploit database search |
 | Password Cracking | Hashcat | Advanced password recovery |
 | Password Cracking | John | Password security auditing tool |
 | Password Cracking | Hydra | Network logon cracker |
@@ -121,6 +197,8 @@ PyYAML>=6.0.0
 | Internal Network | Rubeus | Kerberos abuse toolkit |
 | Proxy/Tunnel | Chisel | Fast TCP tunnel |
 | Proxy/Tunnel | Gost | GO Simple Tunnel |
+| SSL/TLS | TLSX | TLS analysis tool |
+| HTTP | HTTPX | HTTP toolkit |
 
 ### Usage Guide
 
@@ -137,7 +215,13 @@ PyYAML>=6.0.0
 4. Click "Start Scan" button
 5. View results in real-time
 
-#### 3. Report Generation
+#### 3. AI Assistant
+1. Configure AI provider in Settings
+2. Enter API key for your preferred provider
+3. Use chat interface for security questions
+4. Enable auto-analysis for scan results
+
+#### 4. Report Generation
 1. Complete your security assessment
 2. Navigate to `File` → `Generate Report`
 3. Select report format (HTML/PDF/DOCX/MD)
@@ -167,13 +251,18 @@ Edit `config/settings.yaml` for application preferences:
 
 ```yaml
 general:
-  theme: "light"
+  theme: "dark"
   language: "zh_CN"
   auto_save: true
   
 scan:
   timeout: 300
   max_threads: 10
+
+ai:
+  provider: "openai"
+  model: "gpt-4"
+  api_key: "your-api-key"
 ```
 
 ### Project Structure
@@ -186,7 +275,8 @@ WebSecToolkit/
 ├── core/                   # Core functionality
 │   ├── engine.py          # Main engine
 │   ├── database.py        # Database operations
-│   └── tool_manager.py    # Tool management
+│   ├── tool_manager.py    # Tool management
+│   └── ai_service.py      # AI service integration
 ├── gui/                    # GUI components
 │   ├── main_window.py     # Main window
 │   ├── dialogs/           # Dialog windows
@@ -194,13 +284,23 @@ WebSecToolkit/
 ├── modules/                # Security modules
 │   ├── recon.py           # Reconnaissance
 │   ├── web.py             # Web security
+│   ├── web_adv.py         # Advanced web security
 │   ├── vuln_scan.py       # Vulnerability scanning
 │   ├── password.py        # Password attacks
-│   └── internal.py        # Internal network
+│   ├── internal.py        # Internal network
+│   ├── internal_adv.py    # Advanced internal
+│   ├── ai_assistant.py    # AI assistant
+│   ├── payload.py         # Payload generation
+│   ├── payload_adv.py     # Advanced payloads
+│   ├── tools.py           # Utility tools
+│   ├── utils.py           # General utilities
+│   ├── proxy.py           # Proxy tools
+│   └── gen.py             # Generators
 ├── tools/                  # External tools
 ├── payloads/               # Payload templates
 ├── templates/              # Report templates
 ├── main.py                 # Entry point
+├── WebSecToolkit.exe      # Compiled executable
 └── requirements.txt        # Dependencies
 ```
 
@@ -211,12 +311,7 @@ WebSecToolkit/
 pip install pyinstaller
 
 # Build executable
-pyinstaller --onefile --windowed --name "WebSecToolkit" \
-  --add-data "config;config" \
-  --add-data "gui;gui" \
-  --hidden-import PyQt6 \
-  --hidden-import requests \
-  main.py
+pyinstaller WebSecToolkit.spec --noconfirm
 ```
 
 ### Contributing
@@ -254,40 +349,112 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### 功能特性
 
 #### 🔍 信息收集
-- **子域名枚举**: Subfinder、Amass、Assetfinder
-- **端口扫描**: Nmap、Naabu
-- **DNS枚举**: DNSX
-- **HTTP探测**: HTTPX、Httprobe
+- **端口扫描**: Nmap、Naabu、RustScan、Masscan
+- **子域名枚举**: Subfinder、Subdominator、Chaos、Assetfinder
+- **目录扫描**: Dirsearch、Gobuster、FFUF、Feroxbuster
+- **指纹识别**: WhatWeb、HTTPX
+- **SSL/TLS分析**: TLSX
+- **邮箱收集**: 邮箱枚举和验证
 
 #### 🌐 Web安全
-- **目录扫描**: Dirsearch、Gobuster、FFUF
-- **指纹识别**: WhatWeb、HTTPX
-- **技术检测**: 类Wappalyzer分析
+- **SQL注入**: SQLMap集成
+- **XSS扫描**: Dalfox
+- **LFI/RFI**: 本地/远程文件包含测试
+- **RCE**: 远程代码执行测试
+- **SSRF**: 服务端请求伪造
+- **XXE**: XML外部实体注入
+- **SSTI**: 服务端模板注入
+- **CSRF**: 跨站请求伪造分析
+- **API安全**: API漏洞测试
+- **框架漏洞**: 常见框架漏洞利用
+- **认证漏洞**: 认证绕过测试
+- **文件漏洞**: 上传/包含漏洞
+- **缓存投毒**: Web缓存利用
+- **HTTP走私**: 请求走私检测
+- **开放重定向**: 重定向漏洞扫描
+- **点击劫持**: UI伪装攻击测试
+- **业务逻辑**: 逻辑缺陷检测
+- **JWT安全**: JWT漏洞分析
+- **供应链**: 依赖漏洞扫描
+- **原型污染**: JavaScript原型分析
+- **云安全**: 云元数据利用
+- **WebSocket安全**: WebSocket漏洞测试
+- **AI安全**: AI/LLM应用安全测试
 
 #### 🔓 漏洞扫描
 - **模板扫描**: Nuclei
-- **SQL注入**: SQLMap
-- **XSS扫描**: Dalfox
-- **SSL/TLS分析**: TLSX
 - **CVE查询**: SearchSploit
+- **批量扫描**: 多目标漏洞扫描
+- **PoC管理**: 漏洞验证管理
+- **漏洞搜索**: 漏洞库搜索
 
-#### 🔑 密码破解
+#### 🔑 密码攻击
 - **哈希破解**: Hashcat、John the Ripper
 - **在线爆破**: THC-Hydra
+- **哈希识别**: 自动哈希类型检测
+- **密码生成**: 安全密码生成
 
 #### 🔒 内网渗透
-- **信息收集**: Seatbelt、BloodHound
+- **信息收集**: Seatbelt、系统信息收集
 - **凭证提取**: Mimikatz
 - **Kerberos攻击**: Rubeus
+- **横向移动**: 网络 pivoting 工具
+- **域攻击**: Active Directory 利用
+- **ADCS攻击**: 证书服务攻击
+- **免杀**: AV/EDS 绕过技术
+- **Exchange**: Microsoft Exchange 利用
+- **SharePoint**: SharePoint 漏洞测试
+- **权限维持**: 持久化机制管理
+- **权限提升**: 本地权限提升
 
 #### 🚇 代理隧道
+- **HTTP代理**: 内置HTTP代理
 - **TCP隧道**: Chisel
 - **安全隧道**: Gost
+- **反向代理**: 反向连接代理
 
-#### 📊 报告生成
-- **多种格式**: HTML、PDF、DOCX、Markdown
-- **自定义模板**: 专业报告模板
-- **数据导出**: JSON、CSV、XML
+#### 🤖 AI助手
+- **多模型支持**: OpenAI、Claude、DeepSeek、通义千问、本地模型
+- **安全分析**: AI驱动的漏洞分析
+- **代码审计**: 安全代码审查辅助
+- **报告生成**: AI辅助报告撰写
+- **对话界面**: 交互式安全咨询
+
+#### 🛠️ 实用工具
+- **IP工具**: IP地址分析和计算
+- **HTTP工具**: HTTP请求构建和测试
+- **JSON工具**: JSON格式化和分析
+- **正则工具**: 正则表达式测试
+- **时间工具**: 时间戳转换
+- **对比工具**: 文本比较
+
+#### 🔧 编码与加密
+- **Base编码**: Base64、Base32、Base58、Base85
+- **URL编码**: URL编码/解码
+- **哈希计算**: 多种哈希算法
+- **JWT工具**: JWT编码/解码/伪造
+- **加密解密**: 加密/解密工具
+- **古典密码**: 凯撒、维吉尼亚等
+
+#### 📦 Payload生成
+- **Payload生成器**: 自定义Payload创建
+- **编码器**: Payload编码和混淆
+- **漏洞库**: 漏洞数据库搜索
+- **反弹Shell**: 反弹Shell生成器
+- **Webshell**: Webshell管理
+- **MSF Payload**: Metasploit Payload生成
+
+#### 📊 报告与项目管理
+- **密码生成**: 自定义字典生成
+- **用户名生成**: 用户名枚举列表
+- **目录生成**: 路径字典创建
+- **子域名生成**: 子域名字典创建
+- **字典管理**: 字典文件管理
+- **报告生成**: 专业安全报告
+- **项目管理**: 项目跟踪管理
+- **数据导出**: 多种导出格式
+- **漏洞统计**: 发现结果分析
+- **历史记录**: 操作历史追踪
 
 ### 安装方法
 
@@ -339,15 +506,18 @@ PyYAML>=6.0.0
 |------|------|------|
 | 网络扫描 | Nmap | 网络发现和安全审计 |
 | 网络扫描 | Naabu | 快速端口扫描器 |
+| 网络扫描 | RustScan | 现代端口扫描器 |
+| 网络扫描 | Masscan | 大规模IP端口扫描 |
 | 信息收集 | Subfinder | 子域名发现工具 |
-| 信息收集 | Amass | 攻击面映射框架 |
 | 信息收集 | Assetfinder | 域名和子域名查找 |
 | Web扫描 | Dirsearch | 目录/文件扫描器 |
 | Web扫描 | Gobuster | 目录/DNS/VHost爆破 |
 | Web扫描 | FFUF | 快速Web模糊测试 |
+| Web扫描 | Feroxbuster | 快速递归内容发现 |
 | 漏洞扫描 | Nuclei | 基于模板的漏洞扫描器 |
 | 漏洞扫描 | SQLMap | 自动SQL注入工具 |
 | 漏洞扫描 | Dalfox | XSS扫描和分析工具 |
+| 漏洞扫描 | SearchSploit | 漏洞数据库搜索 |
 | 密码破解 | Hashcat | 高级密码恢复工具 |
 | 密码破解 | John | 密码安全审计工具 |
 | 密码破解 | Hydra | 网络登录破解器 |
@@ -356,6 +526,8 @@ PyYAML>=6.0.0
 | 内网渗透 | Rubeus | Kerberos攻击工具包 |
 | 代理隧道 | Chisel | 快速TCP隧道 |
 | 代理隧道 | Gost | GO简单隧道 |
+| SSL/TLS | TLSX | TLS分析工具 |
+| HTTP | HTTPX | HTTP工具包 |
 
 ### 使用指南
 
@@ -372,7 +544,13 @@ PyYAML>=6.0.0
 4. 点击"开始扫描"按钮
 5. 实时查看结果
 
-#### 3. 生成报告
+#### 3. AI助手
+1. 在设置中配置AI提供商
+2. 输入您首选提供商的API密钥
+3. 使用聊天界面进行安全咨询
+4. 启用扫描结果自动分析
+
+#### 4. 生成报告
 1. 完成安全评估
 2. 导航到 `文件` → `生成报告`
 3. 选择报告格式（HTML/PDF/DOCX/MD）
@@ -402,13 +580,18 @@ PyYAML>=6.0.0
 
 ```yaml
 general:
-  theme: "light"
+  theme: "dark"
   language: "zh_CN"
   auto_save: true
   
 scan:
   timeout: 300
   max_threads: 10
+
+ai:
+  provider: "openai"
+  model: "gpt-4"
+  api_key: "your-api-key"
 ```
 
 ### 项目结构
@@ -421,7 +604,8 @@ WebSecToolkit/
 ├── core/                   # 核心功能
 │   ├── engine.py          # 主引擎
 │   ├── database.py        # 数据库操作
-│   └── tool_manager.py    # 工具管理
+│   ├── tool_manager.py    # 工具管理
+│   └── ai_service.py      # AI服务集成
 ├── gui/                    # 图形界面
 │   ├── main_window.py     # 主窗口
 │   ├── dialogs/           # 对话框
@@ -429,13 +613,23 @@ WebSecToolkit/
 ├── modules/                # 安全模块
 │   ├── recon.py           # 信息收集
 │   ├── web.py             # Web安全
+│   ├── web_adv.py         # 高级Web安全
 │   ├── vuln_scan.py       # 漏洞扫描
 │   ├── password.py        # 密码攻击
-│   └── internal.py        # 内网渗透
+│   ├── internal.py        # 内网渗透
+│   ├── internal_adv.py    # 高级内网
+│   ├── ai_assistant.py    # AI助手
+│   ├── payload.py         # Payload生成
+│   ├── payload_adv.py     # 高级Payload
+│   ├── tools.py           # 实用工具
+│   ├── utils.py           # 通用工具
+│   ├── proxy.py           # 代理工具
+│   └── gen.py             # 生成器
 ├── tools/                  # 外部工具
 ├── payloads/               # Payload模板
 ├── templates/              # 报告模板
 ├── main.py                 # 程序入口
+├── WebSecToolkit.exe      # 编译后的可执行文件
 └── requirements.txt        # 依赖列表
 ```
 
@@ -446,12 +640,7 @@ WebSecToolkit/
 pip install pyinstaller
 
 # 构建可执行文件
-pyinstaller --onefile --windowed --name "WebSecToolkit" \
-  --add-data "config;config" \
-  --add-data "gui;gui" \
-  --hidden-import PyQt6 \
-  --hidden-import requests \
-  main.py
+pyinstaller WebSecToolkit.spec --noconfirm
 ```
 
 ### 参与贡献

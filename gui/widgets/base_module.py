@@ -4,10 +4,10 @@ from PyQt6.QtWidgets import (
     QGroupBox, QScrollArea, QSplitter, QTableWidget,
     QTableWidgetItem, QHeaderView, QTabWidget, QProgressBar,
     QSpinBox, QFileDialog, QMessageBox, QListView, QDialog,
-    QListWidget, QDialogButtonBox, QFormLayout
+    QListWidget, QDialogButtonBox, QFormLayout, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QThread, QMetaObject
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QThread, QMetaObject, QTimer, QPropertyAnimation, QRect, Q_ARG
+from PyQt6.QtGui import QFont, QColor
 from typing import Optional, Dict, Any, List, Callable
 import threading
 import os
@@ -202,17 +202,20 @@ class BaseModuleWidget(QWidget):
     scan_started = pyqtSignal()
     scan_finished = pyqtSignal()
     progress_updated = pyqtSignal(int)
+    module_running_changed = pyqtSignal(str, bool)
+    module_completed = pyqtSignal(str, str, bool)
     
     COMMON_STYLES = """
-        QScrollArea { border: none; }
+        QScrollArea { border: none; background-color: transparent; }
         QScrollBar:vertical {
             background-color: #F3F4F6;
-            width: 8px;
+            width: 10px;
             margin: 0px;
         }
         QScrollBar::handle:vertical {
             background-color: #D1D5DB;
-            border-radius: 4px;
+            border-radius: 5px;
+            min-height: 30px;
         }
         QScrollBar::handle:vertical:hover {
             background-color: #9CA3AF;
@@ -220,18 +223,29 @@ class BaseModuleWidget(QWidget):
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
             height: 0px;
         }
+        QScrollBar:horizontal {
+            background-color: #F3F4F6;
+            height: 10px;
+            margin: 0px;
+        }
+        QScrollBar::handle:horizontal {
+            background-color: #D1D5DB;
+            border-radius: 5px;
+            min-width: 30px;
+        }
         QTabWidget::pane {
             background-color: #FFFFFF;
             border: 1px solid #E5E7EB;
-            border-radius: 6px;
+            border-radius: 8px;
         }
         QTabBar::tab {
             background-color: #F3F4F6;
             color: #6B7280;
             padding: 10px 20px;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
             margin-right: 2px;
+            min-width: 80px;
         }
         QTabBar::tab:selected {
             background-color: #FFFFFF;
@@ -247,7 +261,7 @@ class BaseModuleWidget(QWidget):
             background-color: #FFFFFF;
             color: #1F2937;
             border: 1px solid #E5E7EB;
-            border-radius: 6px;
+            border-radius: 8px;
             gridline-color: #E5E7EB;
         }
         QTableWidget::item {
@@ -260,9 +274,10 @@ class BaseModuleWidget(QWidget):
         QHeaderView::section {
             background-color: #F9FAFB;
             color: #6B7280;
-            padding: 8px;
+            padding: 10px;
             border: none;
             border-bottom: 1px solid #E5E7EB;
+            font-weight: bold;
         }
         QHeaderView::section:horizontal {
             border-right: 1px solid #E5E7EB;
@@ -274,7 +289,7 @@ class BaseModuleWidget(QWidget):
             background-color: #FFFFFF;
             color: #1F2937;
             border: 1px solid #E5E7EB;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 10px;
             font-family: Consolas, Monaco, monospace;
             font-size: 10pt;
@@ -283,20 +298,36 @@ class BaseModuleWidget(QWidget):
             background-color: #F3F4F6;
             color: #1F2937;
             border: 1px solid #E5E7EB;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 2px;
             text-align: center;
+            min-height: 20px;
         }
         QProgressBar::chunk {
             background-color: #4285F4;
-            border-radius: 4px;
+            border-radius: 6px;
+        }
+        QGroupBox {
+            font-weight: bold;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 15px;
+            padding: 0 8px;
+            color: #374151;
         }
     """
     
-    def __init__(self, module_name: str, parent=None):
+    def __init__(self, module_id: str, display_name: str = None, parent=None):
         super().__init__(parent)
-        self.module_name = module_name
+        self.module_id = module_id
+        self.module_name = display_name or module_id
         self._is_scanning = False
+        self._scan_finished_called = False
         self._results = []
         self._tool_manager = get_tool_manager()
         self._style_manager = get_style_manager()
@@ -304,29 +335,66 @@ class BaseModuleWidget(QWidget):
         self._setup_base_ui()
     
     def _get_available_tools(self) -> List[Dict[str, str]]:
-        return self._tool_manager.get_module_tools_info(self.module_name)
+        return self._tool_manager.get_module_tools_info(self.module_id)
     
     def _is_tool_available(self, tool_name: str) -> bool:
-        return self._tool_manager.is_tool_available(self.module_name, tool_name)
+        return self._tool_manager.is_tool_available(self.module_id, tool_name)
     
     def _get_tool_path(self, tool_name: str) -> Optional[Path]:
-        return self._tool_manager.get_tool_path(self.module_name, tool_name)
+        return self._tool_manager.get_tool_path(self.module_id, tool_name)
     
     def _execute_tool(self, tool_name: str, args: List[str], 
-                     capture_output: bool = True) -> subprocess.Popen:
-        self._current_process = self._tool_manager.execute_tool(
-            self.module_name, tool_name, args
-        )
-        return self._current_process
+                     capture_output: bool = True) -> Optional[subprocess.Popen]:
+        try:
+            if not self._is_tool_available(tool_name):
+                self._add_log(LogLevel.ERROR, f"工具 {tool_name} 不可用")
+                return None
+            
+            self._current_process = self._tool_manager.execute_tool(
+                self.module_id, tool_name, args
+            )
+            return self._current_process
+        except FileNotFoundError:
+            self._add_log(LogLevel.ERROR, f"工具 {tool_name} 未找到")
+            return None
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"执行工具失败: {str(e)}")
+            return None
     
     def _stop_current_tool(self):
-        if self._current_process and self._current_process.poll() is None:
-            self._current_process.terminate()
-            try:
-                self._current_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self._current_process.kill()
-            self._current_process = None
+        try:
+            if hasattr(self, '_executor') and self._executor:
+                try:
+                    self._add_log(LogLevel.INFO, "正在取消线程池任务...")
+                    if hasattr(self, '_futures') and self._futures:
+                        for future in list(self._futures.values()):
+                            try:
+                                future.cancel()
+                            except Exception:
+                                pass
+                    self._executor.shutdown(wait=False, cancel_futures=True)
+                    self._add_log(LogLevel.INFO, "线程池已关闭")
+                except Exception:
+                    pass
+                self._executor = None
+                self._futures = None
+        except Exception:
+            pass
+        
+        try:
+            if hasattr(self, '_current_process') and self._current_process:
+                if self._current_process.poll() is None:
+                    try:
+                        self._current_process.terminate()
+                        try:
+                            self._current_process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            self._current_process.kill()
+                    except Exception:
+                        pass
+                self._current_process = None
+        except Exception:
+            pass
     
     def _setup_combo(self, combo: QComboBox, items: list = None):
         combo.setStyleSheet("""
@@ -378,29 +446,160 @@ class BaseModuleWidget(QWidget):
     
     def _setup_base_ui(self):
         self._main_layout = QVBoxLayout(self)
-        self._main_layout.setContentsMargins(20, 20, 20, 20)
-        self._main_layout.setSpacing(15)
+        self._main_layout.setContentsMargins(15, 15, 15, 15)
+        self._main_layout.setSpacing(10)
         
         self._header = self._create_header()
         self._main_layout.addWidget(self._header)
         
-        self._content_splitter = QSplitter(Qt.Orientation.Vertical)
-        self._main_layout.addWidget(self._content_splitter, 1)
+        self._progress_bar = QProgressBar()
+        self._progress_bar.setVisible(False)
+        self._progress_bar.setStyleSheet(self.COMMON_STYLES)
+        self._main_layout.addWidget(self._progress_bar)
         
-        self._input_panel = self._create_input_panel()
-        self._content_splitter.addWidget(self._input_panel)
+        main_scroll = QScrollArea()
+        main_scroll.setWidgetResizable(True)
+        main_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        main_scroll.setStyleSheet(self.COMMON_STYLES)
         
-        self._output_panel = self._create_output_panel()
-        self._content_splitter.addWidget(self._output_panel)
+        scroll_content = QWidget()
+        scroll_content.setMinimumWidth(600)
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(5, 5, 5, 5)
+        scroll_layout.setSpacing(15)
         
-        self._content_splitter.setSizes([300, 400])
+        target_group = QGroupBox("目标设置")
+        target_layout = QVBoxLayout(target_group)
+        target_layout.setSpacing(10)
+        
+        target_input_layout = QHBoxLayout()
+        self._target_input = QLineEdit()
+        self._target_input.setPlaceholderText("输入目标地址，多个目标用逗号分隔")
+        self._target_input.setMinimumHeight(36)
+        
+        self._file_btn = QPushButton("从文件导入")
+        self._file_btn.setObjectName("secondaryButton")
+        self._file_btn.setFixedWidth(100)
+        self._file_btn.clicked.connect(self._import_targets)
+        
+        target_input_layout.addWidget(self._target_input, 1)
+        target_input_layout.addWidget(self._file_btn)
+        target_layout.addLayout(target_input_layout)
+        
+        scroll_layout.addWidget(target_group)
+        
+        self._options_widget = self._create_options_widget()
+        if self._options_widget:
+            scroll_layout.addWidget(self._options_widget)
+        
+        result_group = QGroupBox("扫描结果")
+        result_layout = QVBoxLayout(result_group)
+        result_layout.setSpacing(10)
+        
+        self._result_table = self._create_result_table()
+        self._result_table.setMinimumHeight(250)
+        self._result_table.setStyleSheet(self.COMMON_STYLES)
+        result_layout.addWidget(self._result_table)
+        
+        result_btn_layout = QHBoxLayout()
+        
+        self._clear_result_btn = QPushButton("清空结果")
+        self._clear_result_btn.setObjectName("secondaryButton")
+        self._clear_result_btn.clicked.connect(self._clear_results)
+        result_btn_layout.addWidget(self._clear_result_btn)
+        
+        self._delete_result_btn = QPushButton("删除选中")
+        self._delete_result_btn.setObjectName("secondaryButton")
+        self._delete_result_btn.clicked.connect(self._delete_selected_results)
+        result_btn_layout.addWidget(self._delete_result_btn)
+        
+        self._export_result_btn = QPushButton("导出结果")
+        self._export_result_btn.setObjectName("secondaryButton")
+        self._export_result_btn.clicked.connect(self._export_results)
+        result_btn_layout.addWidget(self._export_result_btn)
+        
+        result_btn_layout.addStretch()
+        result_layout.addLayout(result_btn_layout)
+        
+        scroll_layout.addWidget(result_group)
+        
+        log_group = QGroupBox("操作日志")
+        log_layout = QVBoxLayout(log_group)
+        log_layout.setSpacing(10)
+        
+        self._log_view = QTextEdit()
+        self._log_view.setReadOnly(True)
+        self._log_view.setMinimumHeight(150)
+        self._log_view.setMaximumHeight(300)
+        
+        font = self._log_view.font()
+        font.setPointSize(12)
+        self._log_view.setFont(font)
+        
+        self._log_view.setStyleSheet(self.COMMON_STYLES)
+        log_layout.addWidget(self._log_view)
+        
+        log_btn_layout = QHBoxLayout()
+        
+        self._clear_log_btn = QPushButton("清空日志")
+        self._clear_log_btn.setObjectName("secondaryButton")
+        self._clear_log_btn.clicked.connect(self._clear_log)
+        log_btn_layout.addWidget(self._clear_log_btn)
+        
+        self._export_log_btn = QPushButton("导出日志")
+        self._export_log_btn.setObjectName("secondaryButton")
+        self._export_log_btn.clicked.connect(self._export_log)
+        log_btn_layout.addWidget(self._export_log_btn)
+        
+        log_btn_layout.addStretch()
+        log_layout.addLayout(log_btn_layout)
+        
+        scroll_layout.addWidget(log_group)
+        
+        scroll_layout.addStretch()
+        
+        main_scroll.setWidget(scroll_content)
+        self._main_layout.addWidget(main_scroll, 1)
+        
+        self._config_widgets = []
+        self._collect_config_widgets()
+    
+    def _collect_config_widgets(self):
+        self._config_widgets = []
+        self._config_widgets.append(self._target_input)
+        self._config_widgets.append(self._file_btn)
+        
+        if self._options_widget:
+            self._find_editable_widgets(self._options_widget)
+    
+    def _find_editable_widgets(self, widget):
+        for child in widget.findChildren(QWidget):
+            if isinstance(child, (QLineEdit, QComboBox, QCheckBox, QSpinBox, QTextEdit)):
+                if child not in self._config_widgets:
+                    self._config_widgets.append(child)
+            elif isinstance(child, QPushButton):
+                if child not in self._config_widgets and child not in [self._clear_result_btn, self._delete_result_btn, self._export_result_btn, self._clear_log_btn, self._export_log_btn]:
+                    self._config_widgets.append(child)
+    
+    def _lock_config(self, locked: bool):
+        for widget in self._config_widgets:
+            if widget is None:
+                continue
+            try:
+                widget.setEnabled(not locked)
+                if locked:
+                    widget.setStyleSheet(widget.styleSheet() + "; background-color: #F3F4F6;")
+                else:
+                    widget.setStyleSheet(widget.styleSheet().replace("; background-color: #F3F4F6;", ""))
+            except:
+                pass
     
     def _create_header(self) -> QFrame:
         header = QFrame()
-        header.setFixedHeight(60)
+        header.setFixedHeight(50)
         
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(20, 10, 20, 10)
+        layout.setContentsMargins(10, 5, 10, 5)
         
         title_label = QLabel(self.module_name)
         title_label.setObjectName("titleLabel")
@@ -409,6 +608,7 @@ class BaseModuleWidget(QWidget):
         layout.addStretch()
         
         self._start_btn = QPushButton("开始")
+        self._start_btn.setFixedWidth(100)
         self._start_btn.clicked.connect(self._on_start_scan)
         layout.addWidget(self._start_btn)
         
@@ -421,111 +621,8 @@ class BaseModuleWidget(QWidget):
         
         return header
     
-    def _create_input_panel(self) -> QFrame:
-        panel = QFrame()
-        
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(15, 15, 15, 15)
-        
-        target_label = QLabel("目标设置")
-        target_label.setObjectName("categoryLabel")
-        layout.addWidget(target_label)
-        
-        target_layout = QHBoxLayout()
-        
-        self._target_input = QLineEdit()
-        self._target_input.setPlaceholderText("输入目标地址，多个目标用逗号分隔")
-        
-        self._file_btn = QPushButton("从文件导入")
-        self._file_btn.setObjectName("secondaryButton")
-        self._file_btn.clicked.connect(self._import_targets)
-        
-        target_layout.addWidget(self._target_input, 1)
-        target_layout.addWidget(self._file_btn)
-        layout.addLayout(target_layout)
-        
-        self._options_widget = self._create_options_widget()
-        if self._options_widget:
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setWidget(self._options_widget)
-            scroll_area.setStyleSheet(self.COMMON_STYLES)
-            layout.addWidget(scroll_area)
-        
-        return panel
-    
     def _create_options_widget(self) -> Optional[QWidget]:
         return None
-    
-    def _create_output_panel(self) -> QFrame:
-        panel = QFrame()
-        
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(15, 15, 15, 15)
-        
-        output_tabs = QTabWidget()
-        output_tabs.setStyleSheet(self.COMMON_STYLES)
-        
-        result_widget = QWidget()
-        result_layout = QVBoxLayout(result_widget)
-        result_layout.setContentsMargins(0, 0, 0, 0)
-        result_layout.setSpacing(5)
-        
-        result_btn_layout = QHBoxLayout()
-        self._clear_result_btn = QPushButton("清空结果")
-        self._clear_result_btn.setObjectName("secondaryButton")
-        self._clear_result_btn.clicked.connect(self._clear_results)
-        
-        self._delete_selected_btn = QPushButton("删除选中")
-        self._delete_selected_btn.setObjectName("dangerButton")
-        self._delete_selected_btn.clicked.connect(self._delete_selected_results)
-        
-        result_btn_layout.addStretch()
-        result_btn_layout.addWidget(self._delete_selected_btn)
-        result_btn_layout.addWidget(self._clear_result_btn)
-        
-        self._result_table = self._create_result_table()
-        self._result_table.setStyleSheet(self.COMMON_STYLES)
-        result_layout.addLayout(result_btn_layout)
-        result_layout.addWidget(self._result_table)
-        
-        output_tabs.addTab(result_widget, "结果")
-        
-        log_widget = QWidget()
-        log_layout = QVBoxLayout(log_widget)
-        log_layout.setContentsMargins(0, 0, 0, 0)
-        log_layout.setSpacing(5)
-        
-        log_btn_layout = QHBoxLayout()
-        self._clear_log_btn = QPushButton("清空日志")
-        self._clear_log_btn.setObjectName("secondaryButton")
-        self._clear_log_btn.clicked.connect(self._clear_log)
-        
-        self._export_log_btn = QPushButton("导出日志")
-        self._export_log_btn.setObjectName("secondaryButton")
-        self._export_log_btn.clicked.connect(self._export_log)
-        
-        log_btn_layout.addStretch()
-        log_btn_layout.addWidget(self._export_log_btn)
-        log_btn_layout.addWidget(self._clear_log_btn)
-        
-        self._log_view = QTextEdit()
-        self._log_view.setReadOnly(True)
-        self._log_view.setObjectName("logView")
-        self._log_view.setStyleSheet(self.COMMON_STYLES)
-        log_layout.addLayout(log_btn_layout)
-        log_layout.addWidget(self._log_view)
-        
-        output_tabs.addTab(log_widget, "日志")
-        
-        layout.addWidget(output_tabs)
-        
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setVisible(False)
-        self._progress_bar.setStyleSheet(self.COMMON_STYLES)
-        layout.addWidget(self._progress_bar)
-        
-        return panel
     
     def _create_result_table(self) -> QTableWidget:
         table = QTableWidget()
@@ -540,6 +637,7 @@ class BaseModuleWidget(QWidget):
         
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        table.setMinimumHeight(200)
         
         return table
     
@@ -568,6 +666,29 @@ class BaseModuleWidget(QWidget):
                 self._result_table.removeRow(row)
                 if row < len(self._results):
                     self._results.pop(row)
+    
+    def _export_results(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "导出结果", "", "CSV文件 (*.csv);;文本文件 (*.txt);;所有文件 (*)"
+        )
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    headers = []
+                    for col in range(self._result_table.columnCount()):
+                        headers.append(self._result_table.horizontalHeaderItem(col).text())
+                    f.write(','.join(headers) + '\n')
+                    
+                    for row in range(self._result_table.rowCount()):
+                        row_data = []
+                        for col in range(self._result_table.columnCount()):
+                            item = self._result_table.item(row, col)
+                            row_data.append(item.text() if item else '')
+                        f.write(','.join(row_data) + '\n')
+                
+                self._add_log(LogLevel.SUCCESS, f"结果已导出到: {file_path}")
+            except Exception as e:
+                QMessageBox.warning(self, "错误", f"导出失败: {str(e)}")
     
     def _clear_log(self):
         self._log_view.clear()
@@ -612,34 +733,60 @@ class BaseModuleWidget(QWidget):
             return
         
         self._is_scanning = True
+        self._scan_finished_called = False
         self._start_btn.setEnabled(False)
         self._stop_btn.setEnabled(True)
         self._progress_bar.setVisible(True)
         self._progress_bar.setValue(0)
         
+        self._lock_config(True)
+        
         self._log_view.clear()
         self._add_log(LogLevel.INFO, f"开始扫描: {targets}")
         
+        self.module_running_changed.emit(self.module_name, True)
         self.scan_started.emit()
         self._start_scan_thread()
     
     def _on_stop_scan(self):
-        reply = QMessageBox.question(self, "确认停止", "确定要停止当前扫描吗？",
-                                   QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                   QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            self._is_scanning = False
-            self._stop_current_tool()
+        if not self._is_scanning:
+            return
+        
+        self._is_scanning = False
+        
+        try:
+            if hasattr(self, '_stop_btn') and self._stop_btn:
+                self._stop_btn.setEnabled(False)
+        except Exception:
+            pass
+        
+        try:
             self._add_log(LogLevel.WARNING, "正在停止扫描...")
+        except Exception:
+            pass
+        
+        try:
+            self._stop_current_tool()
+        except Exception:
+            pass
+        
+        try:
+            self._add_log(LogLevel.INFO, "扫描已停止")
+        except Exception:
+            pass
+    
+    def stop_scan(self):
+        self._on_stop_scan()
     
     def _start_scan_thread(self):
         def scan():
             try:
                 self._do_scan()
             except Exception as e:
-                self._add_log(LogLevel.ERROR, f"扫描出错: {str(e)}")
+                import traceback
+                traceback.print_exc()
             finally:
-                self._scan_finished()
+                QMetaObject.invokeMethod(self, "_scan_finished", Qt.ConnectionType.QueuedConnection)
         
         thread = threading.Thread(target=scan, daemon=True)
         thread.start()
@@ -647,27 +794,90 @@ class BaseModuleWidget(QWidget):
     def _do_scan(self):
         pass
     
+    @pyqtSlot()
     def _scan_finished(self):
-        self._is_scanning = False
-        self._start_btn.setEnabled(True)
-        self._stop_btn.setEnabled(False)
-        self._progress_bar.setVisible(False)
-        self._add_log(LogLevel.INFO, "扫描完成")
-        self.scan_finished.emit()
+        if self._scan_finished_called:
+            return
+        self._scan_finished_called = True
+        
+        try:
+            self._is_scanning = False
+            
+            if hasattr(self, '_progress_bar') and self._progress_bar:
+                self._progress_bar.setValue(100)
+            
+            if hasattr(self, '_start_btn') and self._start_btn:
+                self._start_btn.setEnabled(True)
+            if hasattr(self, '_stop_btn') and self._stop_btn:
+                self._stop_btn.setEnabled(False)
+            
+            if hasattr(self, '_lock_config'):
+                self._lock_config(False)
+            
+            if hasattr(self, '_add_log'):
+                self._add_log(LogLevel.INFO, "扫描完成")
+            
+            if hasattr(self, 'scan_finished'):
+                self.scan_finished.emit()
+            
+            if hasattr(self, 'module_running_changed') and hasattr(self, 'module_name'):
+                self.module_running_changed.emit(self.module_name, False)
+            
+            if hasattr(self, 'module_completed') and hasattr(self, 'module_name'):
+                success = len(self._results) > 0 if hasattr(self, '_results') else False
+                self.module_completed.emit(self.module_name, self.module_name, success)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+        finally:
+            if hasattr(self, '_progress_bar') and self._progress_bar:
+                self._progress_bar.setVisible(False)
     
     def _add_log(self, level: LogLevel, message: str):
-        color = self._style_manager.get_log_color(level)
-        self._log_view.append(f'<span style="color: {color}">[{level.value}]</span> {message}')
+        try:
+            color = self._style_manager.get_log_color(level)
+            log_text = f'<span style="color: {color}">[{level.value}]</span> {message}'
+            if threading.current_thread() is not threading.main_thread():
+                QMetaObject.invokeMethod(
+                    self._log_view, "append", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(str, log_text)
+                )
+            else:
+                self._log_view.append(log_text)
+        except Exception:
+            pass
     
     def _add_result(self, *args):
-        row = self._result_table.rowCount()
-        self._result_table.insertRow(row)
-        
-        for col, value in enumerate(args):
-            if col < self._result_table.columnCount():
-                self._result_table.setItem(row, col, QTableWidgetItem(str(value)))
-        
-        self._results.append(list(args))
+        try:
+            self._results.append(list(args))
+            
+            if threading.current_thread() is not threading.main_thread():
+                QMetaObject.invokeMethod(
+                    self, "_add_result_to_table",
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(int, len(self._results) - 1)
+                )
+            else:
+                self._add_result_to_table(len(self._results) - 1)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+    
+    @pyqtSlot(int)
+    def _add_result_to_table(self, result_index: int):
+        try:
+            if 0 <= result_index < len(self._results):
+                args = self._results[result_index]
+                row = self._result_table.rowCount()
+                self._result_table.insertRow(row)
+                
+                for col, value in enumerate(args):
+                    if col < self._result_table.columnCount():
+                        self._result_table.setItem(row, col, QTableWidgetItem(str(value)))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
     
     def _update_progress(self, value: int):
         QMetaObject.invokeMethod(self._progress_bar, "setValue", 

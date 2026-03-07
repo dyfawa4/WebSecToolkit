@@ -3,7 +3,7 @@ from .build import clean, build, create_portable, create_installer
 
 __all__ = [
     'download_tool',
-    'download_wordlists', 
+    'download_wordlists',
     'check_python_tools',
     'clean',
     'build',

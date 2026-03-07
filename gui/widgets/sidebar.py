@@ -2,13 +2,16 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QScrollArea, QSpacerItem, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QPropertyAnimation, QRect, QEasingCurve
+from PyQt6.QtGui import QFont, QColor
 
 
 MODULE_CATEGORIES = {
     "首页": [
         ("首页", "home"),
+    ],
+    "AI助手": [
+        ("AI助手", "ai_assistant"),
     ],
     "信息收集": [
         ("端口扫描", "port_scanner"),
@@ -115,61 +118,148 @@ MODULE_CATEGORIES = {
 }
 
 
+class RunningIndicator(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(8, 8)
+        self._opacity = 1.0
+        self._increasing = False
+        
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._animate)
+        
+        self._color = QColor("#22C55E")
+    
+    def start_animation(self):
+        self._timer.start(50)
+    
+    def stop_animation(self):
+        self._timer.stop()
+        self._opacity = 1.0
+        self.update()
+    
+    def _animate(self):
+        if self._increasing:
+            self._opacity += 0.05
+            if self._opacity >= 1.0:
+                self._opacity = 1.0
+                self._increasing = False
+        else:
+            self._opacity -= 0.05
+            if self._opacity <= 0.3:
+                self._opacity = 0.3
+                self._increasing = True
+        self.update()
+    
+    def paintEvent(self, event):
+        from PyQt6.QtGui import QPainter, QBrush, QPen
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        color = QColor(self._color)
+        color.setAlphaF(self._opacity)
+        
+        painter.setBrush(QBrush(color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(0, 0, 8, 8)
+
+
 class NavButton(QPushButton):
     clicked_with_id = pyqtSignal(str)
-    
+
     def __init__(self, text: str, module_id: str = "", parent=None):
         super().__init__(parent)
         self.module_id = module_id
         self._text = text
+        self._is_running = False
+        self._indicator = None
         self._setup_ui()
-    
+        self.clicked.connect(self._on_clicked)
+
     def _setup_ui(self):
         self.setObjectName("navButton")
         self.setCheckable(True)
         self.setFixedHeight(42)
         self.setMinimumWidth(200)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._update_text()
         
-        self.setText(f"  {self._text}")
+        self.setStyleSheet("""
+            QPushButton {
+                text-align: left;
+                padding-left: 10px;
+                border: none;
+                background: transparent;
+                color: #374151;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+            QPushButton:checked {
+                background-color: #DBEAFE;
+                border-left: 3px solid #3B82F6;
+                color: #1E40AF;
+            }
+        """)
+
+    def _update_text(self):
+        if self._is_running:
+            self.setText(f"  {self._text}  ●")
+        else:
+            self.setText(f"  {self._text}")
+
+    def set_running(self, running: bool):
+        self._is_running = running
+        self._update_text()
+        
+        if running:
+            self.setStyleSheet("""
+                QPushButton {
+                    background-color: #DCFCE7;
+                    border-left: 3px solid #22C55E;
+                    color: #166534;
+                }
+            """)
+        else:
+            self.setStyleSheet("")
     
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
+    def _on_clicked(self):
         self.clicked_with_id.emit(self.module_id)
 
 
 class Sidebar(QWidget):
     module_selected = pyqtSignal(str)
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._buttons = {}
+        self._running_modules = set()
         self._setup_ui()
-    
+
     def _setup_ui(self):
         self.setObjectName("sidebar")
         self.setFixedWidth(250)
-        
+
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        
+
         header = QFrame()
         header.setStyleSheet("background: transparent;")
         header.setFixedHeight(70)
         header_layout = QVBoxLayout(header)
         header_layout.setContentsMargins(20, 15, 20, 15)
-        
+
         title = QLabel("WebSec Toolkit")
         title.setObjectName("titleLabel")
-        
-        version = QLabel("v1.0.0")
+
+        version = QLabel("v1.01")
         version.setStyleSheet("font-size: 11px;")
-        
+
         header_layout.addWidget(title)
         header_layout.addWidget(version)
         main_layout.addWidget(header)
-        
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -179,36 +269,67 @@ class Sidebar(QWidget):
                 background: transparent;
                 border: none;
             }
+            QScrollBar:vertical {
+                background: transparent;
+                width: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background: #D1D5DB;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #9CA3AF;
+            }
         """)
-        
+
         scroll_content = QWidget()
         scroll_content.setStyleSheet("background: transparent;")
         scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(10, 0, 10, 10)
-        scroll_layout.setSpacing(2)
-        
-        for category_name, items in MODULE_CATEGORIES.items():
-            category_label = QLabel(category_name)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(5)
+
+        for category, modules in MODULE_CATEGORIES.items():
+            category_label = QLabel(category)
             category_label.setObjectName("categoryLabel")
+            category_label.setMinimumHeight(30)
             scroll_layout.addWidget(category_label)
-            
-            for item_name, module_id in items:
-                btn = NavButton(item_name, module_id)
+
+            for module_name, module_id in modules:
+                btn = NavButton(module_name, module_id)
                 btn.clicked_with_id.connect(self._on_button_clicked)
                 self._buttons[module_id] = btn
                 scroll_layout.addWidget(btn)
-            
-            scroll_layout.addSpacing(5)
-        
-        scroll_layout.addStretch()
+
+            scroll_layout.addSpacing(10)
+
+        scroll_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll)
-    
+
     def _on_button_clicked(self, module_id: str):
-        for btn in self._buttons.values():
-            btn.setChecked(btn.module_id == module_id)
+        for btn_id, btn in self._buttons.items():
+            btn.setChecked(btn_id == module_id)
         self.module_selected.emit(module_id)
-    
+
     def select_module(self, module_id: str):
         if module_id in self._buttons:
-            self._on_button_clicked(module_id)
+            btn = self._buttons[module_id]
+            btn.setChecked(True)
+            self.module_selected.emit(module_id)
+
+    def set_module_running(self, module_id: str, running: bool):
+        if module_id in self._buttons:
+            self._buttons[module_id].set_running(running)
+        
+        if running:
+            self._running_modules.add(module_id)
+        else:
+            self._running_modules.discard(module_id)
+
+    def clear_running_status(self, module_id: str):
+        if module_id in self._buttons:
+            self._buttons[module_id].set_running(False)
+        self._running_modules.discard(module_id)
+
+    def is_module_running(self, module_id: str) -> bool:
+        return module_id in self._running_modules

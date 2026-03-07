@@ -17,7 +17,7 @@ import tempfile
 @register_module("ssti")
 class SSTIScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("SSTI模板注入")
+        super().__init__("ssti", "SSTI模板注入")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -134,7 +134,7 @@ class SSTIScannerWidget(BaseModuleWidget):
 @register_module("lfi_rfi")
 class LFRIScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("LFI/RFI文件包含")
+        super().__init__("lfi_rfi", "LFI/RFI文件包含")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -249,7 +249,7 @@ class LFRIScannerWidget(BaseModuleWidget):
 @register_module("csrf")
 class CSRFScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("CSRF跨站请求伪造")
+        super().__init__("csrf", "CSRF跨站请求伪造")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -355,7 +355,7 @@ class CSRFScannerWidget(BaseModuleWidget):
 @register_module("api_security")
 class APISecurityWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("API安全测试")
+        super().__init__("api_security", "API安全测试")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -500,7 +500,7 @@ class APISecurityWidget(BaseModuleWidget):
 @register_module("framework")
 class FrameworkScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("框架漏洞扫描")
+        super().__init__("framework", "框架漏洞扫描")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -638,7 +638,7 @@ class FrameworkScannerWidget(BaseModuleWidget):
 @register_module("auth_vuln")
 class AuthVulnScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("认证漏洞测试")
+        super().__init__("auth_vuln", "认证漏洞测试")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -737,7 +737,7 @@ class AuthVulnScannerWidget(BaseModuleWidget):
 @register_module("file_vuln")
 class FileVulnScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("文件漏洞检测")
+        super().__init__("file_vuln", "文件漏洞检测")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -830,7 +830,7 @@ class FileVulnScannerWidget(BaseModuleWidget):
 @register_module("cache_vuln")
 class CacheVulnScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("缓存漏洞检测")
+        super().__init__("cache_vuln", "缓存漏洞检测")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -924,7 +924,7 @@ class CacheVulnScannerWidget(BaseModuleWidget):
 @register_module("http_smuggling")
 class HTTPSmugglingWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("HTTP请求走私")
+        super().__init__("http_smuggling", "HTTP请求走私")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -970,7 +970,7 @@ class HTTPSmugglingWidget(BaseModuleWidget):
 @register_module("open_redirect")
 class OpenRedirectWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("开放重定向")
+        super().__init__("open_redirect", "开放重定向")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1067,7 +1067,7 @@ class OpenRedirectWidget(BaseModuleWidget):
 @register_module("clickjacking")
 class ClickjackingWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("点击劫持")
+        super().__init__("clickjacking", "点击劫持")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1137,7 +1137,7 @@ class ClickjackingWidget(BaseModuleWidget):
 @register_module("business_logic")
 class BusinessLogicWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("业务逻辑漏洞")
+        super().__init__("business_logic", "业务逻辑漏洞")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1185,7 +1185,7 @@ class BusinessLogicWidget(BaseModuleWidget):
 @register_module("jwt_security")
 class JWTSecurityWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("JWT安全测试")
+        super().__init__("jwt_security", "JWT安全测试")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1268,7 +1268,7 @@ class JWTSecurityWidget(BaseModuleWidget):
 @register_module("supply_chain")
 class SupplyChainWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("供应链安全")
+        super().__init__("supply_chain", "供应链安全")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1314,7 +1314,7 @@ class SupplyChainWidget(BaseModuleWidget):
 @register_module("prototype_pollution")
 class PrototypePollutionWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("原型链污染")
+        super().__init__("prototype_pollution", "原型链污染")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1386,7 +1386,7 @@ class PrototypePollutionWidget(BaseModuleWidget):
 @register_module("cloud_security")
 class CloudSecurityWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("云安全检测")
+        super().__init__("cloud_security", "云安全检测")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1463,7 +1463,7 @@ class CloudSecurityWidget(BaseModuleWidget):
 @register_module("websocket")
 class WebSocketWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("WebSocket安全")
+        super().__init__("websocket", "WebSocket安全")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1511,7 +1511,7 @@ class WebSocketWidget(BaseModuleWidget):
 @register_module("ai_security")
 class AISecurityWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("AI安全测试")
+        super().__init__("ai_security", "AI安全测试")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

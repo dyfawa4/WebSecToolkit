@@ -18,7 +18,7 @@ import base64
 @register_module("hash_identify")
 class HashIdentifyWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Hash识别")
+        super().__init__("hash_identify", "Hash识别")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -103,7 +103,7 @@ class HashIdentifyWidget(BaseModuleWidget):
 @register_module("dict_generator")
 class DictGeneratorWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("字典生成器")
+        super().__init__("dict_generator", "字典生成器")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -182,7 +182,7 @@ class DictGeneratorWidget(BaseModuleWidget):
 @register_module("poc_manager")
 class POCManagerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("PoC管理")
+        super().__init__("poc_manager", "PoC管理")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -251,7 +251,7 @@ class POCManagerWidget(BaseModuleWidget):
 @register_module("exploit_search")
 class ExploitSearchWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("漏洞利用搜索")
+        super().__init__("exploit_search", "漏洞利用搜索")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -313,7 +313,7 @@ class ExploitSearchWidget(BaseModuleWidget):
 @register_module("reverse_shell")
 class ReverseShellWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("反弹Shell生成")
+        super().__init__("reverse_shell", "反弹Shell生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -386,7 +386,7 @@ class ReverseShellWidget(BaseModuleWidget):
 @register_module("webshell")
 class WebshellWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Webshell生成")
+        super().__init__("webshell", "Webshell生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -449,7 +449,7 @@ class WebshellWidget(BaseModuleWidget):
 @register_module("msf_payload")
 class MSFPayloadWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("MSF Payload生成")
+        super().__init__("msf_payload", "MSF Payload生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -526,7 +526,7 @@ class MSFPayloadWidget(BaseModuleWidget):
 @register_module("payload_evasion")
 class PayloadEvasionWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Payload免杀")
+        super().__init__("payload_evasion", "Payload免杀")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -592,7 +592,7 @@ class PayloadEvasionWidget(BaseModuleWidget):
 @register_module("phishing_file")
 class PhishingFileWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("钓鱼文件生成")
+        super().__init__("phishing_file", "钓鱼文件生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

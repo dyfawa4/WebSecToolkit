@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QComboBox, QCheckBox, QSpinBox, QGroupBox,
     QFormLayout, QTextEdit, QTableWidget, QTableWidgetItem,
-    QHeaderView, QProgressBar, QFileDialog, QMessageBox
+    QHeaderView, QProgressBar, QFileDialog, QMessageBox, QTabWidget
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import subprocess
@@ -13,27 +13,33 @@ import re
 import socket
 import concurrent.futures
 import os
+import tempfile
 
 
 @register_module("port_scanner")
 class PortScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("端口扫描")
+        super().__init__("port_scanner", "端口扫描")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
+        tabs = QTabWidget()
+        
+        basic_tab = QWidget()
+        basic_layout = QVBoxLayout(basic_tab)
+        
         tool_group = QGroupBox("工具选择")
         tool_layout = QFormLayout(tool_group)
         
         self._tool_combo = QComboBox()
-        self._setup_combo(self._tool_combo, ["内置扫描器", "Nmap", "Naabu"])
+        self._setup_combo(self._tool_combo, ["内置扫描器", "Nmap", "Naabu", "RustScan", "Masscan"])
         self._tool_combo.currentIndexChanged.connect(self._on_tool_changed)
         tool_layout.addRow("扫描工具:", self._tool_combo)
         
-        layout.addWidget(tool_group)
+        basic_layout.addWidget(tool_group)
         
         options_group = QGroupBox("扫描选项")
         form_layout = QFormLayout(options_group)
@@ -67,7 +73,192 @@ class PortScannerWidget(BaseModuleWidget):
         self._service_detect_check.setChecked(True)
         form_layout.addRow(self._service_detect_check)
         
-        layout.addWidget(options_group)
+        basic_layout.addWidget(options_group)
+        tabs.addTab(basic_tab, "基本选项")
+        
+        nmap_tab = QWidget()
+        nmap_layout = QVBoxLayout(nmap_tab)
+        
+        nmap_group = QGroupBox("Nmap 高级选项")
+        nmap_form = QFormLayout(nmap_group)
+        
+        self._nmap_timing_combo = QComboBox()
+        self._setup_combo(self._nmap_timing_combo, [
+            "T0 (偏执)", "T1 (鬼祟)", "T2 (礼貌)", "T3 (正常)", 
+            "T4 (激进)", "T5 (疯狂)"
+        ])
+        self._nmap_timing_combo.setCurrentIndex(3)
+        nmap_form.addRow("时间模板:", self._nmap_timing_combo)
+        
+        self._nmap_os_check = QCheckBox("操作系统检测 (-O)")
+        nmap_form.addRow(self._nmap_os_check)
+        
+        self._nmap_aggressive_check = QCheckBox("激进扫描 (-A)")
+        nmap_form.addRow(self._nmap_aggressive_check)
+        
+        self._nmap_script_input = QLineEdit()
+        self._nmap_script_input.setPlaceholderText("脚本名称，如: vuln,auth,default")
+        nmap_form.addRow("NSE脚本:", self._nmap_script_input)
+        
+        self._nmap_scriptArgs_input = QLineEdit()
+        self._nmap_scriptArgs_input.setPlaceholderText("脚本参数，如: user=admin")
+        nmap_form.addRow("脚本参数:", self._nmap_scriptArgs_input)
+        
+        self._nmap_pn_check = QCheckBox("跳过主机发现 (-Pn)")
+        self._nmap_pn_check.setChecked(True)
+        nmap_form.addRow(self._nmap_pn_check)
+        
+        self._nmap_A_check = QCheckBox("启用ACK扫描")
+        nmap_form.addRow(self._nmap_A_check)
+        
+        self._nmap_f_check = QCheckBox("快速扫描 (-F)")
+        nmap_form.addRow(self._nmap_f_check)
+        
+        self._nmap_r_check = QCheckBox("随机化端口顺序")
+        nmap_form.addRow(self._nmap_r_check)
+        
+        self._nmap_v_check = QCheckBox("详细输出 (-v)")
+        nmap_form.addRow(self._nmap_v_check)
+        
+        self._nmap_outputFile_input = QLineEdit()
+        self._nmap_outputFile_input.setPlaceholderText("输出文件路径")
+        nmap_form.addRow("输出文件:", self._nmap_outputFile_input)
+        
+        nmap_layout.addWidget(nmap_group)
+        nmap_layout.addStretch()
+        tabs.addTab(nmap_tab, "Nmap选项")
+        
+        naabu_tab = QWidget()
+        naabu_layout = QVBoxLayout(naabu_tab)
+        
+        naabu_group = QGroupBox("Naabu 高级选项")
+        naabu_form = QFormLayout(naabu_group)
+        
+        self._naabu_topPorts_combo = QComboBox()
+        self._setup_combo(self._naabu_topPorts_combo, [
+            "自定义端口", "Top 100", "Top 1000", "Full (1-65535)"
+        ])
+        naabu_form.addRow("端口选择:", self._naabu_topPorts_combo)
+        
+        self._naabu_rate_spin = QSpinBox()
+        self._naabu_rate_spin.setRange(1, 10000)
+        self._naabu_rate_spin.setValue(1000)
+        naabu_form.addRow("速率限制:", self._naabu_rate_spin)
+        
+        self._naabu_c_spin = QSpinBox()
+        self._naabu_c_spin.setRange(1, 10000)
+        self._naabu_c_spin.setValue(25)
+        naabu_form.addRow("并发数:", self._naabu_c_spin)
+        
+        self._naabu_exclude_input = QLineEdit()
+        self._naabu_exclude_input.setPlaceholderText("排除端口，如: 22,80,443")
+        naabu_form.addRow("排除端口:", self._naabu_exclude_input)
+        
+        self._naabu_json_check = QCheckBox("JSON输出")
+        naabu_form.addRow(self._naabu_json_check)
+        
+        self._naabu_silent_check = QCheckBox("静默模式")
+        self._naabu_silent_check.setChecked(True)
+        naabu_form.addRow(self._naabu_silent_check)
+        
+        self._naabu_verify_check = QCheckBox("验证模式")
+        naabu_form.addRow(self._naabu_verify_check)
+        
+        self._naabu_outputFile_input = QLineEdit()
+        self._naabu_outputFile_input.setPlaceholderText("输出文件路径")
+        naabu_form.addRow("输出文件:", self._naabu_outputFile_input)
+        
+        naabu_layout.addWidget(naabu_group)
+        naabu_layout.addStretch()
+        tabs.addTab(naabu_tab, "Naabu选项")
+        
+        rustscan_tab = QWidget()
+        rustscan_layout = QVBoxLayout(rustscan_tab)
+        
+        rustscan_group = QGroupBox("RustScan 高级选项")
+        rustscan_form = QFormLayout(rustscan_group)
+        
+        self._rustscan_ulimit_spin = QSpinBox()
+        self._rustscan_ulimit_spin.setRange(1, 100000)
+        self._rustscan_ulimit_spin.setValue(5000)
+        rustscan_form.addRow("文件描述符限制:", self._rustscan_ulimit_spin)
+        
+        self._rustscan_batch_spin = QSpinBox()
+        self._rustscan_batch_spin.setRange(1, 100000)
+        self._rustscan_batch_spin.setValue(4500)
+        rustscan_form.addRow("批量大小:", self._rustscan_batch_spin)
+        
+        self._rustscan_timeout_spin = QSpinBox()
+        self._rustscan_timeout_spin.setRange(1, 10000)
+        self._rustscan_timeout_spin.setValue(3000)
+        self._rustscan_timeout_spin.setSuffix(" 毫秒")
+        rustscan_form.addRow("超时时间:", self._rustscan_timeout_spin)
+        
+        self._rustscan_tries_spin = QSpinBox()
+        self._rustscan_tries_spin.setRange(1, 10)
+        self._rustscan_tries_spin.setValue(1)
+        rustscan_form.addRow("重试次数:", self._rustscan_tries_spin)
+        
+        self._rustscan_nmap_check = QCheckBox("自动调用Nmap服务识别")
+        self._rustscan_nmap_check.setChecked(True)
+        rustscan_form.addRow(self._rustscan_nmap_check)
+        
+        self._rustscan_nmap_args = QLineEdit()
+        self._rustscan_nmap_args.setPlaceholderText("Nmap参数，如: -sV -sC")
+        rustscan_form.addRow("Nmap参数:", self._rustscan_nmap_args)
+        
+        self._rustscan_silent_check = QCheckBox("静默模式")
+        self._rustscan_silent_check.setChecked(True)
+        rustscan_form.addRow(self._rustscan_silent_check)
+        
+        self._rustscan_outputFile_input = QLineEdit()
+        self._rustscan_outputFile_input.setPlaceholderText("输出文件路径")
+        rustscan_form.addRow("输出文件:", self._rustscan_outputFile_input)
+        
+        rustscan_layout.addWidget(rustscan_group)
+        rustscan_layout.addStretch()
+        tabs.addTab(rustscan_tab, "RustScan选项")
+        
+        masscan_tab = QWidget()
+        masscan_layout = QVBoxLayout(masscan_tab)
+        
+        masscan_group = QGroupBox("Masscan 高级选项")
+        masscan_form = QFormLayout(masscan_group)
+        
+        self._masscan_rate_spin = QSpinBox()
+        self._masscan_rate_spin.setRange(1, 100000000)
+        self._masscan_rate_spin.setValue(10000)
+        masscan_form.addRow("速率 (包/秒):", self._masscan_rate_spin)
+        
+        self._masscan_wait_spin = QSpinBox()
+        self._masscan_wait_spin.setRange(0, 60)
+        self._masscan_wait_spin.setValue(3)
+        self._masscan_wait_spin.setSuffix(" 秒")
+        masscan_form.addRow("等待时间:", self._masscan_wait_spin)
+        
+        self._masscan_max_retries_spin = QSpinBox()
+        self._masscan_max_retries_spin.setRange(0, 10)
+        self._masscan_max_retries_spin.setValue(0)
+        masscan_form.addRow("最大重试:", self._masscan_max_retries_spin)
+        
+        self._masscan_source_port_spin = QSpinBox()
+        self._masscan_source_port_spin.setRange(0, 65535)
+        self._masscan_source_port_spin.setValue(0)
+        masscan_form.addRow("源端口:", self._masscan_source_port_spin)
+        
+        self._masscan_interface_input = QLineEdit()
+        self._masscan_interface_input.setPlaceholderText("网络接口名称")
+        masscan_form.addRow("网络接口:", self._masscan_interface_input)
+        
+        self._masscan_outputFile_input = QLineEdit()
+        self._masscan_outputFile_input.setPlaceholderText("输出文件路径")
+        masscan_form.addRow("输出文件:", self._masscan_outputFile_input)
+        
+        masscan_layout.addWidget(masscan_group)
+        masscan_layout.addStretch()
+        tabs.addTab(masscan_tab, "Masscan选项")
+        
+        layout.addWidget(tabs)
         
         self._update_tool_status()
         return widget
@@ -89,6 +280,18 @@ class PortScannerWidget(BaseModuleWidget):
                 self._add_log(LogLevel.INFO, "Naabu 工具可用")
             else:
                 self._add_log(LogLevel.WARNING, "Naabu 工具不可用，请先下载")
+        elif tool_name == "RustScan":
+            available = self._is_tool_available("rustscan")
+            if available:
+                self._add_log(LogLevel.INFO, "RustScan 工具可用")
+            else:
+                self._add_log(LogLevel.WARNING, "RustScan 工具不可用，请先下载")
+        elif tool_name == "Masscan":
+            available = self._is_tool_available("masscan")
+            if available:
+                self._add_log(LogLevel.INFO, "Masscan 工具可用")
+            else:
+                self._add_log(LogLevel.WARNING, "Masscan 工具不可用，请先下载")
     
     def _create_result_table(self) -> QTableWidget:
         table = QTableWidget()
@@ -115,8 +318,160 @@ class PortScannerWidget(BaseModuleWidget):
             self._scan_with_nmap()
         elif tool_name == "Naabu":
             self._scan_with_naabu()
+        elif tool_name == "RustScan":
+            self._scan_with_rustscan()
+        elif tool_name == "Masscan":
+            self._scan_with_masscan()
         else:
             self._scan_builtin()
+    
+    def _scan_with_rustscan(self):
+        if not self._is_tool_available("rustscan"):
+            self._add_log(LogLevel.ERROR, "RustScan 工具不可用")
+            self._add_log(LogLevel.INFO, "下载地址: https://github.com/RustScan/RustScan/releases")
+            return
+        
+        targets = self._target_input.text().strip().split(',')
+        port_range = self._port_range_input.text().strip()
+        
+        for target in targets:
+            target = target.strip()
+            if not target:
+                continue
+            
+            self._add_log(LogLevel.INFO, f"使用 RustScan 扫描: {target}")
+            
+            args = ["-a", target]
+            
+            args.extend(["--ulimit", str(self._rustscan_ulimit_spin.value())])
+            args.extend(["--batch-size", str(self._rustscan_batch_spin.value())])
+            args.extend(["--timeout", str(self._rustscan_timeout_spin.value())])
+            args.extend(["--tries", str(self._rustscan_tries_spin.value())])
+            
+            if port_range:
+                args.extend(["-p", port_range])
+            
+            if self._rustscan_nmap_check.isChecked():
+                nmap_args = self._rustscan_nmap_args.text().strip()
+                if nmap_args:
+                    args.extend(["--", nmap_args])
+                else:
+                    args.extend(["--", "-sV"])
+            
+            if self._rustscan_silent_check.isChecked():
+                args.append("-q")
+            
+            output_file = self._rustscan_outputFile_input.text().strip()
+            if output_file:
+                args.extend(["-o", output_file])
+            
+            try:
+                process = self._execute_tool("rustscan", args)
+                if not process:
+                    return
+                
+                while True:
+                    if not self._is_scanning:
+                        process.terminate()
+                        break
+                    
+                    line = process.stdout.readline()
+                    if not line:
+                        if process.poll() is not None:
+                            break
+                        continue
+                    
+                    self._parse_rustscan_output(line.strip())
+                
+                self._add_log(LogLevel.SUCCESS, f"RustScan 扫描完成: {target}")
+                
+            except Exception as e:
+                self._add_log(LogLevel.ERROR, f"RustScan 扫描失败: {str(e)}")
+    
+    def _parse_rustscan_output(self, line: str):
+        if not line:
+            return
+        
+        port_match = re.search(r'(\d+)/tcp\s+open\s+(\S+)?', line)
+        if port_match:
+            port = port_match.group(1)
+            service = port_match.group(2) if port_match.group(2) else "unknown"
+            target = self._target_input.text().strip().split(',')[0]
+            self._add_result(target.strip(), port, "open", service)
+            self._add_log(LogLevel.SUCCESS, f"发现开放端口: {port} ({service})")
+        elif "Open" in line:
+            parts = line.split()
+            for part in parts:
+                if part.isdigit():
+                    self._add_log(LogLevel.SUCCESS, f"发现开放端口: {part}")
+    
+    def _scan_with_masscan(self):
+        if not self._is_tool_available("masscan"):
+            self._add_log(LogLevel.ERROR, "Masscan 工具不可用")
+            self._add_log(LogLevel.INFO, "下载地址: https://github.com/robertdavidgraham/masscan")
+            return
+        
+        targets = self._target_input.text().strip().split(',')
+        port_range = self._port_range_input.text().strip()
+        
+        for target in targets:
+            target = target.strip()
+            if not target:
+                continue
+            
+            self._add_log(LogLevel.INFO, f"使用 Masscan 扫描: {target}")
+            
+            args = [target, "-p", port_range]
+            
+            args.extend(["--rate", str(self._masscan_rate_spin.value())])
+            args.extend(["--wait", str(self._masscan_wait_spin.value())])
+            args.extend(["--max-retries", str(self._masscan_max_retries_spin.value())])
+            
+            source_port = self._masscan_source_port_spin.value()
+            if source_port > 0:
+                args.extend(["--source-port", str(source_port)])
+            
+            interface = self._masscan_interface_input.text().strip()
+            if interface:
+                args.extend(["-e", interface])
+            
+            output_file = self._masscan_outputFile_input.text().strip()
+            if output_file:
+                args.extend(["-oL", output_file])
+            
+            try:
+                process = self._execute_tool("masscan", args)
+                if not process:
+                    return
+                
+                while True:
+                    if not self._is_scanning:
+                        process.terminate()
+                        break
+                    
+                    line = process.stdout.readline()
+                    if not line:
+                        if process.poll() is not None:
+                            break
+                        continue
+                    
+                    self._parse_masscan_output(line.strip())
+                
+                self._add_log(LogLevel.SUCCESS, f"Masscan 扫描完成: {target}")
+                
+            except Exception as e:
+                self._add_log(LogLevel.ERROR, f"Masscan 扫描失败: {str(e)}")
+    
+    def _parse_masscan_output(self, line: str):
+        if not line or line.startswith("#"):
+            return
+        
+        parts = line.split()
+        if len(parts) >= 4 and parts[0] == "open":
+            port = parts[2]
+            ip = parts[3]
+            self._add_result(ip, port, "open", "unknown")
+            self._add_log(LogLevel.SUCCESS, f"发现开放端口: {ip}:{port}")
     
     def _scan_with_nmap(self):
         if not self._is_tool_available("nmap"):
@@ -133,10 +488,56 @@ class PortScannerWidget(BaseModuleWidget):
             
             self._add_log(LogLevel.INFO, f"使用 Nmap 扫描: {target}")
             
-            args = ["-p", port_range, "-sV", "-T4", "-Pn", target]
+            args = ["-p", port_range]
+            
+            timing_map = {
+                "T0 (偏执)": "-T0", "T1 (鬼祟)": "-T1", "T2 (礼貌)": "-T2",
+                "T3 (正常)": "-T3", "T4 (激进)": "-T4", "T5 (疯狂)": "-T5"
+            }
+            timing = timing_map.get(self._nmap_timing_combo.currentText(), "-T3")
+            args.append(timing)
+            
+            if self._service_detect_check.isChecked():
+                args.append("-sV")
+            
+            if self._nmap_os_check.isChecked():
+                args.append("-O")
+            
+            if self._nmap_aggressive_check.isChecked():
+                args.append("-A")
+            
+            if self._nmap_pn_check.isChecked():
+                args.append("-Pn")
+            
+            if self._nmap_f_check.isChecked():
+                args.append("-F")
+            
+            if self._nmap_r_check.isChecked():
+                args.append("-r")
+            
+            if self._nmap_v_check.isChecked():
+                args.append("-v")
+            
+            script = self._nmap_script_input.text().strip()
+            if script:
+                args.extend(["--script", script])
+            
+            script_args = self._nmap_scriptArgs_input.text().strip()
+            if script_args:
+                args.extend(["--script-args", script_args])
+            
+            output_file = self._nmap_outputFile_input.text().strip()
+            if output_file:
+                args.extend(["-oN", output_file])
+            
+            args.append(target)
             
             try:
                 process = self._execute_tool("nmap", args)
+                
+                if process is None:
+                    self._add_log(LogLevel.ERROR, "Nmap 扫描失败: 无法启动进程")
+                    return
                 
                 while True:
                     if not self._is_scanning:
@@ -166,7 +567,7 @@ class PortScannerWidget(BaseModuleWidget):
             version = " ".join(parts[3:]) if len(parts) > 3 else ""
             
             target = self._target_input.text().strip().split(',')[0]
-            self._add_result(target.strip(), port, state, f"{service} {version}")
+            self._add_result(target.strip(), port, state, service, version)
             self._add_log(LogLevel.SUCCESS, f"发现开放端口: {port} - {service}")
     
     def _scan_with_naabu(self):
@@ -184,10 +585,44 @@ class PortScannerWidget(BaseModuleWidget):
             
             self._add_log(LogLevel.INFO, f"使用 Naabu 扫描: {target}")
             
-            args = ["-host", target, "-p", port_range, "-silent"]
+            args = ["-host", target]
+            
+            top_ports = self._naabu_topPorts_combo.currentText()
+            if top_ports == "自定义端口":
+                args.extend(["-p", port_range])
+            elif top_ports == "Top 100":
+                args.append("-top-ports 100")
+            elif top_ports == "Top 1000":
+                args.append("-top-ports 1000")
+            elif top_ports == "Full (1-65535)":
+                args.append("-p -")
+            
+            args.extend(["-rate", str(self._naabu_rate_spin.value())])
+            args.extend(["-c", str(self._naabu_c_spin.value())])
+            
+            exclude = self._naabu_exclude_input.text().strip()
+            if exclude:
+                args.extend(["-exclude-ports", exclude])
+            
+            if self._naabu_json_check.isChecked():
+                args.append("-json")
+            
+            if self._naabu_silent_check.isChecked():
+                args.append("-silent")
+            
+            if self._naabu_verify_check.isChecked():
+                args.append("-verify")
+            
+            output_file = self._naabu_outputFile_input.text().strip()
+            if output_file:
+                args.extend(["-o", output_file])
             
             try:
                 process = self._execute_tool("naabu", args)
+                
+                if process is None:
+                    self._add_log(LogLevel.ERROR, "Naabu 扫描失败: 无法启动进程")
+                    return
                 
                 while True:
                     if not self._is_scanning:
@@ -215,44 +650,67 @@ class PortScannerWidget(BaseModuleWidget):
         targets = self._target_input.text().strip().split(',')
         port_range = self._port_range_input.text().strip()
         timeout = self._timeout_spin.value()
-        threads = self._threads_spin.value()
+        threads = min(self._threads_spin.value(), 50)
         
         ports = self._parse_port_range(port_range)
         if not ports:
             self._add_log(LogLevel.ERROR, "无效的端口范围")
             return
         
-        self._add_log(LogLevel.INFO, f"扫描端口: {len(ports)} 个")
+        if len(ports) > 1000:
+            self._add_log(LogLevel.WARNING, f"端口数量较多 ({len(ports)})，扫描可能需要较长时间")
+        
+        self._add_log(LogLevel.INFO, f"扫描端口: {len(ports)} 个，并发: {threads}")
         
         total = len(targets) * len(ports)
         completed = 0
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+        self._executor = None
+        self._futures = {}
+        
+        try:
+            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
             futures = {}
             for target in targets:
                 target = target.strip()
                 if not target:
                     continue
                 for port in ports:
-                    future = executor.submit(self._scan_port, target.strip(), port, timeout)
+                    if not self._is_scanning:
+                        self._add_log(LogLevel.INFO, "扫描已取消")
+                        return
+                    future = self._executor.submit(self._scan_port, target.strip(), port, timeout)
                     futures[future] = (target.strip(), port)
+            
+            self._futures = futures
             
             for future in concurrent.futures.as_completed(futures):
                 if not self._is_scanning:
+                    self._add_log(LogLevel.INFO, "正在取消剩余任务...")
                     break
                 
                 target, port = futures[future]
                 try:
-                    is_open, service = future.result()
+                    is_open, service = future.result(timeout=timeout + 1)
                     if is_open:
                         self._add_result(target, str(port), "开放", service)
                         self._add_log(LogLevel.SUCCESS, f"{target}:{port} - 开放 - {service}")
-                except Exception as e:
+                except concurrent.futures.TimeoutError:
+                    pass
+                except Exception:
                     pass
                 
                 completed += 1
-                progress = int((completed / total) * 100)
-                self._update_progress(progress)
+                if completed % 50 == 0:
+                    progress = int((completed / total) * 100)
+                    self._update_progress(progress)
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"扫描出错: {str(e)}")
+        finally:
+            if self._executor:
+                self._executor.shutdown(wait=False, cancel_futures=True)
+            self._executor = None
+            self._futures = {}
     
     def _parse_port_range(self, port_str: str) -> list:
         ports = []
@@ -261,17 +719,27 @@ class PortScannerWidget(BaseModuleWidget):
                 part = part.strip()
                 if '-' in part:
                     start, end = part.split('-')
-                    ports.extend(range(int(start), int(end) + 1))
+                    start_int = int(start)
+                    end_int = int(end)
+                    if end_int > 65535:
+                        end_int = 65535
+                    if start_int > end_int:
+                        continue
+                    ports.extend(range(start_int, end_int + 1))
                 else:
-                    ports.append(int(part))
+                    port_int = int(part)
+                    if 1 <= port_int <= 65535:
+                        ports.append(port_int)
         except ValueError:
             return []
-        return sorted(set(ports))
+        return sorted(set(ports))[:5000]
     
     def _scan_port(self, host: str, port: int, timeout: int) -> tuple:
+        sock = None
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             result = sock.connect_ex((host, port))
             
             if result == 0:
@@ -279,33 +747,46 @@ class PortScannerWidget(BaseModuleWidget):
                     service = socket.getservbyport(port)
                 except:
                     service = "unknown"
-                sock.close()
                 return (True, service)
-            sock.close()
-        except:
-            pass
+        except socket.gaierror:
+            return (False, "")
+        except socket.error:
+            return (False, "")
+        except Exception:
+            return (False, "")
+        finally:
+            if sock:
+                try:
+                    sock.close()
+                except:
+                    pass
         return (False, "")
 
 
 @register_module("subdomain")
 class SubdomainScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("子域名扫描")
+        super().__init__("subdomain", "子域名扫描")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
+        tabs = QTabWidget()
+        
+        basic_tab = QWidget()
+        basic_layout = QVBoxLayout(basic_tab)
+        
         tool_group = QGroupBox("工具选择")
         tool_layout = QFormLayout(tool_group)
         
         self._tool_combo = QComboBox()
-        self._setup_combo(self._tool_combo, ["内置枚举", "Subfinder", "Amass", "Assetfinder"])
+        self._setup_combo(self._tool_combo, ["内置枚举", "Subfinder", "Subdominator", "Chaos", "Assetfinder"])
         self._tool_combo.currentIndexChanged.connect(self._on_tool_changed)
         tool_layout.addRow("枚举工具:", self._tool_combo)
         
-        layout.addWidget(tool_group)
+        basic_layout.addWidget(tool_group)
         
         options_group = QGroupBox("枚举选项")
         form_layout = QFormLayout(options_group)
@@ -336,7 +817,121 @@ class SubdomainScannerWidget(BaseModuleWidget):
         self._resolve_check.setChecked(True)
         form_layout.addRow(self._resolve_check)
         
-        layout.addWidget(options_group)
+        basic_layout.addWidget(options_group)
+        tabs.addTab(basic_tab, "基本选项")
+        
+        subfinder_tab = QWidget()
+        subfinder_layout = QVBoxLayout(subfinder_tab)
+        
+        subfinder_group = QGroupBox("Subfinder 高级选项")
+        subfinder_form = QFormLayout(subfinder_group)
+        
+        self._subfinder_recursive_check = QCheckBox("递归枚举")
+        subfinder_form.addRow(self._subfinder_recursive_check)
+        
+        self._subfinder_all_check = QCheckBox("使用所有数据源")
+        self._subfinder_all_check.setChecked(True)
+        subfinder_form.addRow(self._subfinder_all_check)
+        
+        self._subfinder_sources_input = QLineEdit()
+        self._subfinder_sources_input.setPlaceholderText("指定数据源，如: shodan,censys")
+        subfinder_form.addRow("数据源:", self._subfinder_sources_input)
+        
+        self._subfinder_excludeSources_input = QLineEdit()
+        self._subfinder_excludeSources_input.setPlaceholderText("排除数据源")
+        subfinder_form.addRow("排除数据源:", self._subfinder_excludeSources_input)
+        
+        self._subfinder_rate_spin = QSpinBox()
+        self._subfinder_rate_spin.setRange(1, 10000)
+        self._subfinder_rate_spin.setValue(1000)
+        subfinder_form.addRow("速率限制:", self._subfinder_rate_spin)
+        
+        self._subfinder_timeout_spin = QSpinBox()
+        self._subfinder_timeout_spin.setRange(1, 300)
+        self._subfinder_timeout_spin.setValue(30)
+        self._subfinder_timeout_spin.setSuffix(" 秒")
+        subfinder_form.addRow("超时时间:", self._subfinder_timeout_spin)
+        
+        self._subfinder_json_check = QCheckBox("JSON输出")
+        subfinder_form.addRow(self._subfinder_json_check)
+        
+        self._subfinder_silent_check = QCheckBox("静默模式")
+        self._subfinder_silent_check.setChecked(True)
+        subfinder_form.addRow(self._subfinder_silent_check)
+        
+        self._subfinder_outputFile_input = QLineEdit()
+        self._subfinder_outputFile_input.setPlaceholderText("输出文件路径")
+        subfinder_form.addRow("输出文件:", self._subfinder_outputFile_input)
+        
+        subfinder_layout.addWidget(subfinder_group)
+        subfinder_layout.addStretch()
+        tabs.addTab(subfinder_tab, "Subfinder选项")
+        
+        amass_tab = QWidget()
+        amass_layout = QVBoxLayout(amass_tab)
+        
+        subdominator_group = QGroupBox("Subdominator 高级选项")
+        subdominator_form = QFormLayout(subdominator_group)
+        
+        self._subdominator_recursive_check = QCheckBox("递归枚举")
+        subdominator_form.addRow(self._subdominator_recursive_check)
+        
+        self._subdominator_all_check = QCheckBox("使用所有数据源")
+        self._subdominator_all_check.setChecked(True)
+        subdominator_form.addRow(self._subdominator_all_check)
+        
+        self._subdominator_sources_input = QLineEdit()
+        self._subdominator_sources_input.setPlaceholderText("指定数据源")
+        subdominator_form.addRow("数据源:", self._subdominator_sources_input)
+        
+        self._subdominator_threads_spin = QSpinBox()
+        self._subdominator_threads_spin.setRange(1, 100)
+        self._subdominator_threads_spin.setValue(10)
+        subdominator_form.addRow("并发数:", self._subdominator_threads_spin)
+        
+        self._subdominator_timeout_spin = QSpinBox()
+        self._subdominator_timeout_spin.setRange(1, 300)
+        self._subdominator_timeout_spin.setValue(30)
+        self._subdominator_timeout_spin.setSuffix(" 秒")
+        subdominator_form.addRow("超时时间:", self._subdominator_timeout_spin)
+        
+        self._subdominator_json_check = QCheckBox("JSON输出")
+        subdominator_form.addRow(self._subdominator_json_check)
+        
+        self._subdominator_silent_check = QCheckBox("静默模式")
+        self._subdominator_silent_check.setChecked(True)
+        subdominator_form.addRow(self._subdominator_silent_check)
+        
+        self._subdominator_outputFile_input = QLineEdit()
+        self._subdominator_outputFile_input.setPlaceholderText("输出文件路径")
+        subdominator_form.addRow("输出文件:", self._subdominator_outputFile_input)
+        
+        amass_layout.addWidget(subdominator_group)
+        
+        chaos_group = QGroupBox("Chaos 高级选项")
+        chaos_form = QFormLayout(chaos_group)
+        
+        self._chaos_key_input = QLineEdit()
+        self._chaos_key_input.setPlaceholderText("Chaos API Key")
+        self._chaos_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        chaos_form.addRow("API Key:", self._chaos_key_input)
+        
+        self._chaos_json_check = QCheckBox("JSON输出")
+        chaos_form.addRow(self._chaos_json_check)
+        
+        self._chaos_silent_check = QCheckBox("静默模式")
+        self._chaos_silent_check.setChecked(True)
+        chaos_form.addRow(self._chaos_silent_check)
+        
+        self._chaos_outputFile_input = QLineEdit()
+        self._chaos_outputFile_input.setPlaceholderText("输出文件路径")
+        chaos_form.addRow("输出文件:", self._chaos_outputFile_input)
+        
+        amass_layout.addWidget(chaos_group)
+        amass_layout.addStretch()
+        tabs.addTab(amass_tab, "Subdominator/Chaos")
+        
+        layout.addWidget(tabs)
         
         self._update_tool_status()
         return widget
@@ -391,8 +986,10 @@ class SubdomainScannerWidget(BaseModuleWidget):
         
         if tool_name == "Subfinder":
             self._scan_with_subfinder()
-        elif tool_name == "Amass":
-            self._scan_with_amass()
+        elif tool_name == "Subdominator":
+            self._scan_with_subdominator()
+        elif tool_name == "Chaos":
+            self._scan_with_chaos()
         elif tool_name == "Assetfinder":
             self._scan_with_assetfinder()
         else:
@@ -410,10 +1007,41 @@ class SubdomainScannerWidget(BaseModuleWidget):
         
         self._add_log(LogLevel.INFO, f"使用 Subfinder 枚举: {domain}")
         
-        args = ["-d", domain, "-silent"]
+        args = ["-d", domain]
+        
+        if self._subfinder_recursive_check.isChecked():
+            args.append("-recursive")
+        
+        if self._subfinder_all_check.isChecked():
+            args.append("-all")
+        
+        sources = self._subfinder_sources_input.text().strip()
+        if sources:
+            args.extend(["-sources", sources])
+        
+        exclude_sources = self._subfinder_excludeSources_input.text().strip()
+        if exclude_sources:
+            args.extend(["-exclude-sources", exclude_sources])
+        
+        args.extend(["-rate-limit", str(self._subfinder_rate_spin.value())])
+        args.extend(["-timeout", str(self._subfinder_timeout_spin.value())])
+        
+        if self._subfinder_json_check.isChecked():
+            args.append("-json")
+        
+        if self._subfinder_silent_check.isChecked():
+            args.append("-silent")
+        
+        output_file = self._subfinder_outputFile_input.text().strip()
+        if output_file:
+            args.extend(["-o", output_file])
         
         try:
             process = self._execute_tool("subfinder", args)
+            
+            if process is None:
+                self._add_log(LogLevel.ERROR, "Subfinder 扫描失败: 无法启动进程")
+                return
             
             while True:
                 if not self._is_scanning:
@@ -436,9 +1064,10 @@ class SubdomainScannerWidget(BaseModuleWidget):
         except Exception as e:
             self._add_log(LogLevel.ERROR, f"Subfinder 枚举失败: {str(e)}")
     
-    def _scan_with_amass(self):
-        if not self._is_tool_available("amass"):
-            self._add_log(LogLevel.ERROR, "Amass 工具不可用")
+    def _scan_with_subdominator(self):
+        if not self._is_tool_available("subdominator"):
+            self._add_log(LogLevel.ERROR, "Subdominator 工具不可用")
+            self._add_log(LogLevel.INFO, "下载地址: https://github.com/RevoltSecurities/Subdominator")
             return
         
         domain = self._target_input.text().strip()
@@ -446,12 +1075,37 @@ class SubdomainScannerWidget(BaseModuleWidget):
             self._add_log(LogLevel.ERROR, "请输入域名")
             return
         
-        self._add_log(LogLevel.INFO, f"使用 Amass 枚举: {domain}")
+        self._add_log(LogLevel.INFO, f"使用 Subdominator 枚举: {domain}")
         
-        args = ["enum", "-passive", "-d", domain, "-silent"]
+        args = ["-d", domain]
+        
+        if self._subdominator_recursive_check.isChecked():
+            args.append("-r")
+        
+        if self._subdominator_all_check.isChecked():
+            args.append("-all")
+        
+        sources = self._subdominator_sources_input.text().strip()
+        if sources:
+            args.extend(["-s", sources])
+        
+        args.extend(["-t", str(self._subdominator_threads_spin.value())])
+        args.extend(["-timeout", str(self._subdominator_timeout_spin.value())])
+        
+        if self._subdominator_json_check.isChecked():
+            args.append("-json")
+        
+        if self._subdominator_silent_check.isChecked():
+            args.append("-silent")
+        
+        output_file = self._subdominator_outputFile_input.text().strip()
+        if output_file:
+            args.extend(["-o", output_file])
         
         try:
-            process = self._execute_tool("amass", args)
+            process = self._execute_tool("subdominator", args)
+            if not process:
+                return
             
             while True:
                 if not self._is_scanning:
@@ -469,10 +1123,68 @@ class SubdomainScannerWidget(BaseModuleWidget):
                     self._add_result(subdomain, "", "found", "")
                     self._add_log(LogLevel.SUCCESS, f"发现子域名: {subdomain}")
             
-            self._add_log(LogLevel.SUCCESS, f"Amass 枚举完成")
+            self._add_log(LogLevel.SUCCESS, f"Subdominator 枚举完成")
             
         except Exception as e:
-            self._add_log(LogLevel.ERROR, f"Amass 枚举失败: {str(e)}")
+            self._add_log(LogLevel.ERROR, f"Subdominator 枚举失败: {str(e)}")
+    
+    def _scan_with_chaos(self):
+        if not self._is_tool_available("chaos"):
+            self._add_log(LogLevel.ERROR, "Chaos 工具不可用")
+            self._add_log(LogLevel.INFO, "下载地址: https://github.com/projectdiscovery/chaos-client")
+            return
+        
+        domain = self._target_input.text().strip()
+        if not domain:
+            self._add_log(LogLevel.ERROR, "请输入域名")
+            return
+        
+        api_key = self._chaos_key_input.text().strip()
+        if not api_key:
+            self._add_log(LogLevel.WARNING, "建议配置Chaos API Key以获得更好结果")
+        
+        self._add_log(LogLevel.INFO, f"使用 Chaos 枚举: {domain}")
+        
+        args = ["-d", domain]
+        
+        if api_key:
+            args.extend(["-key", api_key])
+        
+        if self._chaos_json_check.isChecked():
+            args.append("-json")
+        
+        if self._chaos_silent_check.isChecked():
+            args.append("-silent")
+        
+        output_file = self._chaos_outputFile_input.text().strip()
+        if output_file:
+            args.extend(["-o", output_file])
+        
+        try:
+            process = self._execute_tool("chaos", args)
+            if not process:
+                return
+            
+            while True:
+                if not self._is_scanning:
+                    process.terminate()
+                    break
+                
+                line = process.stdout.readline()
+                if not line:
+                    if process.poll() is not None:
+                        break
+                    continue
+                
+                subdomain = line.strip()
+                if subdomain:
+                    self._add_result(subdomain, "", "found", "")
+                    self._add_log(LogLevel.SUCCESS, f"发现子域名: {subdomain}")
+            
+            self._add_log(LogLevel.SUCCESS, f"Chaos 枚举完成")
+            
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"Chaos 枚举失败: {str(e)}")
     
     def _scan_with_assetfinder(self):
         if not self._is_tool_available("assetfinder"):
@@ -490,6 +1202,10 @@ class SubdomainScannerWidget(BaseModuleWidget):
         
         try:
             process = self._execute_tool("assetfinder", args)
+            
+            if process is None:
+                self._add_log(LogLevel.ERROR, "Assetfinder 扫描失败: 无法启动进程")
+                return
             
             while True:
                 if not self._is_scanning:
@@ -553,12 +1269,27 @@ class SubdomainScannerWidget(BaseModuleWidget):
 @register_module("directory")
 class DirectoryScannerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("目录扫描")
+        super().__init__("directory", "目录扫描")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
+        
+        tabs = QTabWidget()
+        
+        basic_tab = QWidget()
+        basic_layout = QVBoxLayout(basic_tab)
+        
+        tool_group = QGroupBox("工具选择")
+        tool_layout = QFormLayout(tool_group)
+        
+        self._tool_combo = QComboBox()
+        self._setup_combo(self._tool_combo, ["内置扫描", "Dirsearch", "Gobuster", "FFUF", "Feroxbuster"])
+        self._tool_combo.currentIndexChanged.connect(self._on_tool_changed)
+        tool_layout.addRow("扫描工具:", self._tool_combo)
+        
+        basic_layout.addWidget(tool_group)
         
         options_group = QGroupBox("扫描选项")
         form_layout = QFormLayout(options_group)
@@ -591,8 +1322,74 @@ class DirectoryScannerWidget(BaseModuleWidget):
         self._extensions_input.setPlaceholderText("如: .php,.html,.asp")
         form_layout.addRow("扩展名:", self._extensions_input)
         
-        layout.addWidget(options_group)
+        basic_layout.addWidget(options_group)
+        tabs.addTab(basic_tab, "基本选项")
+        
+        feroxbuster_tab = QWidget()
+        feroxbuster_layout = QVBoxLayout(feroxbuster_tab)
+        
+        feroxbuster_group = QGroupBox("Feroxbuster 高级选项")
+        feroxbuster_form = QFormLayout(feroxbuster_group)
+        
+        self._ferox_depth_spin = QSpinBox()
+        self._ferox_depth_spin.setRange(1, 20)
+        self._ferox_depth_spin.setValue(4)
+        feroxbuster_form.addRow("递归深度:", self._ferox_depth_spin)
+        
+        self._ferox_threads_spin = QSpinBox()
+        self._ferox_threads_spin.setRange(1, 100)
+        self._ferox_threads_spin.setValue(50)
+        feroxbuster_form.addRow("并发数:", self._ferox_threads_spin)
+        
+        self._ferox_timeout_spin = QSpinBox()
+        self._ferox_timeout_spin.setRange(1, 120)
+        self._ferox_timeout_spin.setValue(30)
+        self._ferox_timeout_spin.setSuffix(" 秒")
+        feroxbuster_form.addRow("超时时间:", self._ferox_timeout_spin)
+        
+        self._ferox_filter_codes_input = QLineEdit()
+        self._ferox_filter_codes_input.setPlaceholderText("过滤状态码，如: 404,403")
+        feroxbuster_form.addRow("过滤状态码:", self._ferox_filter_codes_input)
+        
+        self._ferox_filter_size_input = QLineEdit()
+        self._ferox_filter_size_input.setPlaceholderText("过滤响应大小")
+        feroxbuster_form.addRow("过滤大小:", self._ferox_filter_size_input)
+        
+        self._ferox_user_agent_input = QLineEdit()
+        self._ferox_user_agent_input.setPlaceholderText("自定义User-Agent")
+        feroxbuster_form.addRow("User-Agent:", self._ferox_user_agent_input)
+        
+        self._ferox_outputFile_input = QLineEdit()
+        self._ferox_outputFile_input.setPlaceholderText("输出文件路径")
+        feroxbuster_form.addRow("输出文件:", self._ferox_outputFile_input)
+        
+        feroxbuster_layout.addWidget(feroxbuster_group)
+        feroxbuster_layout.addStretch()
+        tabs.addTab(feroxbuster_tab, "Feroxbuster选项")
+        
+        layout.addWidget(tabs)
+        
+        self._update_tool_status()
         return widget
+    
+    def _on_tool_changed(self):
+        self._update_tool_status()
+    
+    def _update_tool_status(self):
+        tool_name = self._tool_combo.currentText()
+        tool_map = {
+            "Dirsearch": "dirsearch",
+            "Gobuster": "gobuster",
+            "FFUF": "ffuf",
+            "Feroxbuster": "feroxbuster"
+        }
+        
+        if tool_name in tool_map:
+            available = self._is_tool_available(tool_map[tool_name])
+            if available:
+                self._add_log(LogLevel.INFO, f"{tool_name} 工具可用")
+            else:
+                self._add_log(LogLevel.WARNING, f"{tool_name} 工具不可用，请先下载")
     
     def _select_dict(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -621,6 +1418,306 @@ class DirectoryScannerWidget(BaseModuleWidget):
         return table
     
     def _do_scan(self):
+        tool_name = self._tool_combo.currentText()
+        
+        if tool_name == "Dirsearch":
+            self._scan_with_dirsearch()
+        elif tool_name == "Gobuster":
+            self._scan_with_gobuster()
+        elif tool_name == "FFUF":
+            self._scan_with_ffuf()
+        elif tool_name == "Feroxbuster":
+            self._scan_with_feroxbuster()
+        else:
+            self._scan_builtin()
+    
+    def _scan_with_feroxbuster(self):
+        if not self._is_tool_available("feroxbuster"):
+            self._add_log(LogLevel.ERROR, "Feroxbuster 工具不可用")
+            self._add_log(LogLevel.INFO, "下载地址: https://github.com/epi052/feroxbuster/releases")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        self._add_log(LogLevel.INFO, f"使用 Feroxbuster 扫描: {target}")
+        
+        args = ["-u", target]
+        
+        dict_path = self._dict_input.text().strip()
+        if dict_path:
+            args.extend(["-w", dict_path])
+        
+        args.extend(["-t", str(self._ferox_threads_spin.value())])
+        args.extend(["--timeout", str(self._ferox_timeout_spin.value())])
+        args.extend(["-d", str(self._ferox_depth_spin.value())])
+        
+        filter_codes = self._ferox_filter_codes_input.text().strip()
+        if filter_codes:
+            for code in filter_codes.split(','):
+                args.extend(["-C", code.strip()])
+        
+        filter_size = self._ferox_filter_size_input.text().strip()
+        if filter_size:
+            args.extend(["-S", filter_size])
+        
+        user_agent = self._ferox_user_agent_input.text().strip()
+        if user_agent:
+            args.extend(["-H", f"User-Agent: {user_agent}"])
+        
+        extensions = self._extensions_input.text().strip()
+        if extensions:
+            args.extend(["-x", extensions.replace(',', '')])
+        
+        output_file = self._ferox_outputFile_input.text().strip()
+        if output_file:
+            args.extend(["-o", output_file])
+        
+        try:
+            process = self._execute_tool("feroxbuster", args)
+            if not process:
+                return
+            
+            while True:
+                if not self._is_scanning:
+                    process.terminate()
+                    break
+                
+                line = process.stdout.readline()
+                if not line:
+                    if process.poll() is not None:
+                        break
+                    continue
+                
+                self._parse_feroxbuster_output(line.strip())
+            
+            self._add_log(LogLevel.SUCCESS, f"Feroxbuster 扫描完成: {target}")
+            
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"Feroxbuster 扫描失败: {str(e)}")
+    
+    def _parse_feroxbuster_output(self, line: str):
+        if not line:
+            return
+        
+        code_match = re.search(r'(\d{3})\s+(\d+|\d+[\d,]*)\s+(\S+)\s+\[', line)
+        if code_match:
+            code = code_match.group(1)
+            size = code_match.group(2)
+            url = code_match.group(3)
+            
+            if int(code) < 400:
+                self._add_result(url, code, size, "")
+                self._add_log(LogLevel.SUCCESS, f"[{code}] {url} ({size} bytes)")
+    
+    def _scan_with_dirsearch(self):
+        if not self._is_tool_available("dirsearch"):
+            self._add_log(LogLevel.ERROR, "Dirsearch 工具不可用")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        self._add_log(LogLevel.INFO, f"使用 Dirsearch 扫描: {target}")
+        
+        args = ["-u", target]
+        
+        dict_path = self._dict_input.text().strip()
+        if dict_path:
+            args.extend(["-w", dict_path])
+        
+        args.extend(["-t", str(self._threads_spin.value())])
+        args.extend(["--timeout", str(self._timeout_spin.value())])
+        
+        extensions = self._extensions_input.text().strip()
+        if extensions:
+            args.extend(["-e", extensions.replace(',', '')])
+        
+        if self._recursive_check.isChecked():
+            args.append("-r")
+        
+        try:
+            process = self._execute_tool("dirsearch", args)
+            if not process:
+                return
+            
+            while True:
+                if not self._is_scanning:
+                    process.terminate()
+                    break
+                
+                line = process.stdout.readline()
+                if not line:
+                    if process.poll() is not None:
+                        break
+                    continue
+                
+                self._parse_dirsearch_output(line.strip())
+            
+            self._add_log(LogLevel.SUCCESS, f"Dirsearch 扫描完成: {target}")
+            
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"Dirsearch 扫描失败: {str(e)}")
+    
+    def _parse_dirsearch_output(self, line: str):
+        if not line:
+            return
+        
+        code_match = re.search(r'(\d{3})\s+(\d+)\s+(\S+)', line)
+        if code_match:
+            code = code_match.group(1)
+            size = code_match.group(2)
+            url = code_match.group(3)
+            
+            if int(code) < 400:
+                self._add_result(url, code, size, "")
+                self._add_log(LogLevel.SUCCESS, f"[{code}] {url} ({size} bytes)")
+    
+    def _scan_with_gobuster(self):
+        if not self._is_tool_available("gobuster"):
+            self._add_log(LogLevel.ERROR, "Gobuster 工具不可用")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        self._add_log(LogLevel.INFO, f"使用 Gobuster 扫描: {target}")
+        
+        args = ["dir", "-u", target]
+        
+        dict_path = self._dict_input.text().strip()
+        if dict_path:
+            args.extend(["-w", dict_path])
+        
+        args.extend(["-t", str(self._threads_spin.value())])
+        args.extend(["--timeout", f"{self._timeout_spin.value()}s"])
+        
+        extensions = self._extensions_input.text().strip()
+        if extensions:
+            args.extend(["-x", extensions.replace(',', '')])
+        
+        try:
+            process = self._execute_tool("gobuster", args)
+            if not process:
+                return
+            
+            while True:
+                if not self._is_scanning:
+                    process.terminate()
+                    break
+                
+                line = process.stdout.readline()
+                if not line:
+                    if process.poll() is not None:
+                        break
+                    continue
+                
+                self._parse_gobuster_output(line.strip())
+            
+            self._add_log(LogLevel.SUCCESS, f"Gobuster 扫描完成: {target}")
+            
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"Gobuster 扫描失败: {str(e)}")
+    
+    def _parse_gobuster_output(self, line: str):
+        if not line:
+            return
+        
+        match = re.search(r'(\S+)\s+Status:\s+(\d+)\s+\[Size:\s+(\d+)\]', line)
+        if match:
+            url = match.group(1)
+            code = match.group(2)
+            size = match.group(3)
+            
+            if int(code) < 400:
+                self._add_result(url, code, size, "")
+                self._add_log(LogLevel.SUCCESS, f"[{code}] {url} ({size} bytes)")
+    
+    def _scan_with_ffuf(self):
+        if not self._is_tool_available("ffuf"):
+            self._add_log(LogLevel.ERROR, "FFUF 工具不可用")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        if 'FUZZ' not in target:
+            target = target.rstrip('/') + '/FUZZ'
+        
+        self._add_log(LogLevel.INFO, f"使用 FFUF 扫描: {target}")
+        
+        args = ["-u", target]
+        
+        dict_path = self._dict_input.text().strip()
+        if dict_path:
+            args.extend(["-w", dict_path])
+        
+        args.extend(["-t", str(self._threads_spin.value())])
+        args.extend(["-timeout", str(self._timeout_spin.value())])
+        
+        extensions = self._extensions_input.text().strip()
+        if extensions:
+            args.extend(["-e", extensions.replace(',', '')])
+        
+        try:
+            process = self._execute_tool("ffuf", args)
+            if not process:
+                return
+            
+            while True:
+                if not self._is_scanning:
+                    process.terminate()
+                    break
+                
+                line = process.stdout.readline()
+                if not line:
+                    if process.poll() is not None:
+                        break
+                    continue
+                
+                self._parse_ffuf_output(line.strip())
+            
+            self._add_log(LogLevel.SUCCESS, f"FFUF 扫描完成: {target}")
+            
+        except Exception as e:
+            self._add_log(LogLevel.ERROR, f"FFUF 扫描失败: {str(e)}")
+    
+    def _parse_ffuf_output(self, line: str):
+        if not line:
+            return
+        
+        match = re.search(r'Status:\s+(\d+).*?Size:\s+(\d+)', line)
+        if match:
+            code = match.group(1)
+            size = match.group(2)
+            url_match = re.search(r'(https?://\S+)', line)
+            url = url_match.group(1) if url_match else ""
+            
+            if int(code) < 400:
+                self._add_result(url, code, size, "")
+                self._add_log(LogLevel.SUCCESS, f"[{code}] {url} ({size} bytes)")
+    
+    def _scan_builtin(self):
         import requests
         
         target = self._target_input.text().strip()
@@ -670,7 +1767,7 @@ class DirectoryScannerWidget(BaseModuleWidget):
 @register_module("fingerprint")
 class FingerprintWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("指纹识别")
+        super().__init__("fingerprint", "指纹识别")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -762,7 +1859,7 @@ class FingerprintWidget(BaseModuleWidget):
 @register_module("ssl_analyzer")
 class SSLAnalyzerWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("SSL分析")
+        super().__init__("ssl_analyzer", "SSL分析")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -846,7 +1943,7 @@ class SSLAnalyzerWidget(BaseModuleWidget):
 @register_module("email_collector")
 class EmailCollectorWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("邮箱收集")
+        super().__init__("email_collector", "邮箱收集")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

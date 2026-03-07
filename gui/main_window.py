@@ -10,6 +10,7 @@ from PyQt6.QtGui import QAction, QIcon, QKeySequence, QFont
 
 from gui.gui_styles import StyleSheet
 from gui.widgets import Sidebar, StatCard
+from gui.widgets.notification import NotificationManager
 from gui.dialogs import SettingsDialog, AboutDialog
 
 
@@ -130,6 +131,11 @@ class MainWindow(QMainWindow):
         self._content_stack.addWidget(self._home_widget)
         
         main_layout.addWidget(content_widget)
+        
+        self._notification_manager = NotificationManager(self)
+        self._notification_manager.setGeometry(0, 0, self.width(), self.height())
+        
+        self._current_module_id = None
     
     def _create_header(self) -> QFrame:
         header = QFrame()
@@ -264,6 +270,7 @@ class MainWindow(QMainWindow):
         from modules import get_module_widget
         
         module_ids = [
+            "ai_assistant",
             "port_scanner", "subdomain", "directory", "fingerprint", 
             "ssl_analyzer", "email_collector",
             "sqli", "xss", "ssrf", "rce", "xxe", "ssti", "lfi_rfi",
@@ -291,13 +298,21 @@ class MainWindow(QMainWindow):
             if widget:
                 self._module_widgets[module_id] = widget
                 self._content_stack.addWidget(widget)
+                
+                widget.module_running_changed.connect(self._on_module_running_changed)
+                widget.module_completed.connect(self._on_module_completed)
     
     def _on_module_selected(self, module_id: str):
         if module_id in self._module_widgets:
             widget = self._module_widgets[module_id]
             self._content_stack.setCurrentWidget(widget)
+            self._current_module_id = module_id
+            
+            if self._sidebar.is_module_running(module_id):
+                self._sidebar.clear_running_status(module_id)
             
             module_names = {
+                "ai_assistant": "AI助手",
                 "port_scanner": "端口扫描",
                 "subdomain": "子域名枚举",
                 "directory": "目录扫描",
@@ -462,3 +477,32 @@ class MainWindow(QMainWindow):
     
     def _show_docs(self):
         self._status_label.setText("打开文档...")
+    
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, '_notification_manager'):
+            self._notification_manager.setGeometry(0, 0, self.width(), self.height())
+    
+    def _on_module_running_changed(self, module_id: str, running: bool):
+        self._sidebar.set_module_running(module_id, running)
+        
+        if running:
+            self._status_label.setText(f"{module_id} 正在运行...")
+        else:
+            self._status_label.setText("就绪")
+    
+    def _on_module_completed(self, module_id: str, module_name: str, success: bool):
+        self._sidebar.clear_running_status(module_id)
+        
+        if success:
+            self._notification_manager.show_notification(
+                f"{module_name} 完成",
+                "模块运行成功完成",
+                True
+            )
+        else:
+            self._notification_manager.show_notification(
+                f"{module_name} 结束",
+                "模块运行已结束",
+                False
+            )

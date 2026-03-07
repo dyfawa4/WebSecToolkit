@@ -15,7 +15,7 @@ import os
 @register_module("payload_generator")
 class PayloadGeneratorWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Payload生成器")
+        super().__init__("payload_generator", "Payload生成器")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -98,7 +98,7 @@ class PayloadGeneratorWidget(BaseModuleWidget):
 @register_module("encoder")
 class EncoderWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("编码器")
+        super().__init__("encoder", "编码器")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -194,7 +194,7 @@ class EncoderWidget(BaseModuleWidget):
 @register_module("exploit_db")
 class ExploitDBWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("漏洞数据库")
+        super().__init__("exploit_db", "漏洞数据库")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

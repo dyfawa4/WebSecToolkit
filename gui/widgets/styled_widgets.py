@@ -6,7 +6,7 @@ class StyledComboBox(QComboBox):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._setup_style()
-    
+
     def _setup_style(self):
         view = QListView()
         self.setView(view)

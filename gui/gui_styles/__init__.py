@@ -69,13 +69,14 @@ class StyleSheet:
     
     /* 分类标题 */
     QLabel#categoryLabel {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         color: #9CA3AF;
-        padding: 20px 20px 10px 20px;
+        padding: 8px 15px;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
+        letter-spacing: 1px;
         background-color: transparent;
+        min-height: 30px;
     }
     
     /* 输入框 */

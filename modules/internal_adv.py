@@ -17,7 +17,7 @@ import socket
 @register_module("lateral_move")
 class LateralMoveWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("横向移动")
+        super().__init__("lateral_move", "横向移动")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -126,7 +126,7 @@ class LateralMoveWidget(BaseModuleWidget):
 @register_module("domain_attack")
 class DomainAttackWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("域攻击")
+        super().__init__("domain_attack", "域攻击")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -215,7 +215,7 @@ class DomainAttackWidget(BaseModuleWidget):
 @register_module("adcs_attack")
 class ADCSAttackWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("ADCS攻击")
+        super().__init__("adcs_attack", "ADCS攻击")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -279,7 +279,7 @@ class ADCSAttackWidget(BaseModuleWidget):
 @register_module("evasion")
 class EvasionWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("免杀技术")
+        super().__init__("evasion", "免杀技术")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -344,7 +344,7 @@ class EvasionWidget(BaseModuleWidget):
 @register_module("exchange")
 class ExchangeWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Exchange攻击")
+        super().__init__("exchange", "Exchange攻击")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -407,7 +407,7 @@ class ExchangeWidget(BaseModuleWidget):
 @register_module("sharepoint")
 class SharePointWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("SharePoint安全")
+        super().__init__("sharepoint", "SharePoint安全")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

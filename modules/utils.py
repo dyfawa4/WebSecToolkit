@@ -27,7 +27,7 @@ from gui.widgets.base_module import BaseModuleWidget, LogLevel
 @register_module("ip_tool")
 class IPToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("IP工具")
+        super().__init__("ip_tool", "IP工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -278,7 +278,7 @@ class IPToolWidget(BaseModuleWidget):
 @register_module("http_tool")
 class HTTPToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("HTTP工具")
+        super().__init__("http_tool", "HTTP工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -479,7 +479,7 @@ class HTTPToolWidget(BaseModuleWidget):
 @register_module("json_tool")
 class JSONToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("JSON工具")
+        super().__init__("json_tool", "JSON工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -650,7 +650,7 @@ class JSONToolWidget(BaseModuleWidget):
 @register_module("regex_tool")
 class RegexToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("正则工具")
+        super().__init__("regex_tool", "正则工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -867,7 +867,7 @@ class RegexToolWidget(BaseModuleWidget):
 @register_module("time_tool")
 class TimeToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("时间工具")
+        super().__init__("time_tool", "时间工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1017,7 +1017,7 @@ Unix时间戳: {ts}
 @register_module("diff_tool")
 class DiffToolWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("差异对比")
+        super().__init__("diff_tool", "差异对比")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

@@ -28,7 +28,7 @@ from gui.widgets.base_module import BaseModuleWidget, LogLevel
 @register_module("password_gen")
 class PasswordGenWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("密码生成")
+        super().__init__("password_gen", "密码生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -247,7 +247,7 @@ class PasswordGenWidget(BaseModuleWidget):
 @register_module("username_gen")
 class UsernameGenWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("用户名生成")
+        super().__init__("username_gen", "用户名生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -402,7 +402,7 @@ class UsernameGenWidget(BaseModuleWidget):
 @register_module("dir_gen")
 class DirGenWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("目录字典生成")
+        super().__init__("dir_gen", "目录字典生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -623,7 +623,7 @@ class DirGenWidget(BaseModuleWidget):
 @register_module("subdomain_gen")
 class SubdomainGenWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("子域名字典生成")
+        super().__init__("subdomain_gen", "子域名字典生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -824,7 +824,7 @@ class SubdomainGenWidget(BaseModuleWidget):
 class DictManagerWidget(BaseModuleWidget):
     def __init__(self):
         self._dicts = {}
-        super().__init__("字典管理")
+        super().__init__("dict_manager", "字典管理")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1021,7 +1021,7 @@ class DictManagerWidget(BaseModuleWidget):
 @register_module("report_gen")
 class ReportGenWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("报告生成")
+        super().__init__("report_gen", "报告生成")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1427,7 +1427,7 @@ class ProjectManageWidget(BaseModuleWidget):
     def __init__(self):
         self._projects = {}
         self._load_projects()
-        super().__init__("项目管理")
+        super().__init__("project_manager", "项目管理")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1587,7 +1587,7 @@ class ProjectManageWidget(BaseModuleWidget):
 @register_module("data_export")
 class DataExportWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("数据导出")
+        super().__init__("data_export", "数据导出")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1859,7 +1859,7 @@ th{{background:#f0f0f0}}
 @register_module("vuln_stats")
 class VulnStatsWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("漏洞统计")
+        super().__init__("vuln_stats", "漏洞统计")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1963,7 +1963,7 @@ class VulnStatsWidget(BaseModuleWidget):
 class HistoryWidget(BaseModuleWidget):
     def __init__(self):
         self._history = []
-        super().__init__("历史记录")
+        super().__init__("history", "历史记录")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

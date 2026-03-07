@@ -26,6 +26,7 @@ class ToolInfo:
     version: str = ""
     category: str = ""
     templates: Optional[Path] = None
+    download_url: str = ""
     extra: Dict[str, Any] = field(default_factory=dict)
     
     @property
@@ -40,8 +41,54 @@ class ToolInfo:
             "type": self.tool_type.value,
             "version": self.version,
             "category": self.category,
-            "available": self.available
+            "available": self.available,
+            "download_url": self.download_url
         }
+
+
+TOOL_DOWNLOAD_URLS = {
+    "nmap": "https://nmap.org/download.html",
+    "naabu": "https://github.com/projectdiscovery/naabu/releases",
+    "rustscan": "https://github.com/RustScan/RustScan/releases",
+    "masscan": "https://github.com/robertdavidgraham/masscan",
+    "subfinder": "https://github.com/projectdiscovery/subfinder/releases",
+    "subdominator": "https://github.com/RevoltSecurities/Subdominator/releases",
+    "chaos": "https://github.com/projectdiscovery/chaos-client/releases",
+    "assetfinder": "https://github.com/tomnomnom/assetfinder/releases",
+    "dirsearch": "https://github.com/maurosoria/dirsearch",
+    "gobuster": "https://github.com/OJ/gobuster/releases",
+    "ffuf": "https://github.com/ffuf/ffuf/releases",
+    "feroxbuster": "https://github.com/epi052/feroxbuster/releases",
+    "httpx": "https://github.com/projectdiscovery/httpx/releases",
+    "nuclei": "https://github.com/projectdiscovery/nuclei/releases",
+    "katana": "https://github.com/projectdiscovery/katana/releases",
+    "tlsx": "https://github.com/projectdiscovery/tlsx/releases",
+    "sqlmap": "https://github.com/sqlmapproject/sqlmap",
+    "dalfox": "https://github.com/hahwul/dalfox/releases",
+    "john": "https://github.com/openwall/john",
+    "hashcat": "https://hashcat.net/hashcat/",
+    "netexec": "https://github.com/Pennyw0rth/NetExec/releases",
+    "hydra": "https://github.com/vanhauser-thc/thc-hydra",
+    "searchsploit": "https://github.com/offensive-security/exploitdb",
+    "trivy": "https://github.com/aquasecurity/trivy/releases",
+    "grype": "https://github.com/anchore/grype/releases",
+    "frpc": "https://github.com/fatedier/frp/releases",
+    "frps": "https://github.com/fatedier/frp/releases",
+    "gost": "https://github.com/go-gost/gost/releases",
+    "ligolo": "https://github.com/nicocha30/ligolo-ng/releases",
+    "uncover": "https://github.com/projectdiscovery/uncover/releases",
+    "cloudlist": "https://github.com/projectdiscovery/cloudlist/releases",
+    "cdncheck": "https://github.com/projectdiscovery/cdncheck/releases",
+    "interactsh": "https://github.com/projectdiscovery/interactsh/releases",
+    "kiterunner": "https://github.com/assetnote/kiterunner/releases",
+    "dnsx": "https://github.com/projectdiscovery/dnsx/releases",
+    "gitleaks": "https://github.com/gitleaks/gitleaks/releases",
+    "trufflehog": "https://github.com/trufflesecurity/trufflehog/releases",
+    "notify": "https://github.com/projectdiscovery/notify/releases",
+    "mimikatz": "https://github.com/gentilkiwi/mimikatz",
+    "bloodhound": "https://github.com/dirkjanm/BloodHound.py",
+    "impacket": "https://github.com/fortra/impacket",
+}
 
 
 class ToolExecutor:
@@ -171,6 +218,8 @@ class ToolManager:
                     if "templates" in tool_data:
                         templates = self._base_path / tool_data["templates"]
                     
+                    download_url = TOOL_DOWNLOAD_URLS.get(tool_name, "")
+                    
                     self._tools[module_id][tool_name] = ToolInfo(
                         name=tool_data.get("name", tool_name),
                         path=tool_path,
@@ -179,6 +228,7 @@ class ToolManager:
                         version=tool_data.get("version", ""),
                         category=tool_data.get("category", ""),
                         templates=templates,
+                        download_url=download_url,
                         extra={k: v for k, v in tool_data.items() 
                                if k not in ["name", "path", "description", "type", "version", "category", "templates"]}
                     )
@@ -258,6 +308,35 @@ class ToolManager:
             if category_tools:
                 result[module_id] = category_tools
         return result
+    
+    def get_tool_download_url(self, tool_name: str) -> str:
+        return TOOL_DOWNLOAD_URLS.get(tool_name, "")
+    
+    def get_all_tools_status(self) -> Dict[str, Dict[str, Any]]:
+        result = {}
+        for module_id, tools in self._tools.items():
+            result[module_id] = {}
+            for tool_name, tool in tools.items():
+                result[module_id][tool_name] = {
+                    "name": tool.name,
+                    "available": tool.available,
+                    "version": tool.version,
+                    "download_url": tool.download_url
+                }
+        return result
+    
+    def get_missing_tools(self) -> List[Dict[str, Any]]:
+        missing = []
+        for module_id, tools in self._tools.items():
+            for tool_name, tool in tools.items():
+                if not tool.available:
+                    missing.append({
+                        "module": module_id,
+                        "name": tool_name,
+                        "display_name": tool.name,
+                        "download_url": tool.download_url
+                    })
+        return missing
     
     def save_config(self):
         config_path = self._get_config_path()

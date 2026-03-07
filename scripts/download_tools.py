@@ -176,31 +176,31 @@ def download_tool(tool_name: str, config: dict) -> bool:
     print(f"\n{'='*50}")
     print(f"下载工具: {tool_name}")
     print(f"{'='*50}")
-    
+
     tool_dir = TOOLS_DIR / config.get("extract_dir", tool_name)
     tool_dir.mkdir(parents=True, exist_ok=True)
-    
+
     zip_path = TOOLS_DIR / config["filename"]
-    
+
     if not download_file(config["url"], zip_path):
         return False
-    
+
     if not extract_zip(zip_path, tool_dir):
         return False
-    
+
     try:
         os.remove(zip_path)
         print(f"  已删除临时文件: {zip_path}")
     except:
         pass
-    
+
     print(f"  ✓ {tool_name} 安装完成!")
     return True
 
 
 def check_python_tools():
     print("\n检查Python工具...")
-    
+
     python_tools = [
         ("sqlmap", "sqlmap", "python -m sqlmap --version"),
         ("impacket", "impacket", "python -m impacket.examples.wmiexec --help"),
@@ -209,7 +209,7 @@ def check_python_tools():
         ("beautifulsoup4", "beautifulsoup4", "python -c \"import bs4; print('bs4 installed')\""),
         ("scapy", "scapy", "python -c \"from scapy.all import *; print('scapy installed')\""),
     ]
-    
+
     for name, package, test_cmd in python_tools:
         print(f"  检查 {name}...")
         try:
@@ -240,10 +240,10 @@ def check_python_tools():
 
 def download_wordlists():
     print("\n下载常用字典...")
-    
+
     wordlists_dir = TOOLS_DIR.parent / "wordlists"
     wordlists_dir.mkdir(parents=True, exist_ok=True)
-    
+
     wordlists = {
         "passwords": [
             "https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10k-most-common.txt",
@@ -262,19 +262,19 @@ def download_wordlists():
             "https://raw.githubusercontent.com/danielmiessler/SecLists/master/Usernames/xato-net-10-million-usernames.txt",
         ]
     }
-    
+
     for category, urls in wordlists.items():
         category_dir = wordlists_dir / category
         category_dir.mkdir(parents=True, exist_ok=True)
-        
+
         for url in urls:
             filename = url.split("/")[-1]
             dest = category_dir / filename
-            
+
             if dest.exists():
                 print(f"  ✓ {filename} 已存在")
                 continue
-            
+
             print(f"  下载 {filename}...")
             try:
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -288,50 +288,50 @@ def download_wordlists():
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="安全工具下载脚本")
     parser.add_argument('-y', '--yes', action='store_true', help='自动确认下载')
     parser.add_argument('--tools', nargs='+', help='指定要下载的工具')
     args = parser.parse_args()
-    
+
     print("="*60)
     print("    安全工具下载脚本")
     print("="*60)
-    
+
     TOOLS_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     platform = "windows" if sys.platform == "win32" else "linux"
-    
+
     if platform not in TOOLS_CONFIG:
         print(f"不支持的操作系统: {platform}")
         return
-    
+
     tools = TOOLS_CONFIG[platform]
-    
+
     if args.tools:
         tools = {k: v for k, v in tools.items() if k in args.tools}
-    
+
     print(f"\n将下载以下工具:")
     for tool_name in tools:
         print(f"  - {tool_name}")
-    
+
     if args.yes:
         response = 'y'
     else:
         response = input("\n是否继续? (y/n): ").strip().lower()
-    
+
     if response != 'y':
         print("已取消")
         return
-    
+
     success_count = 0
     for tool_name, config in tools.items():
         if download_tool(tool_name, config):
             success_count += 1
-    
+
     check_python_tools()
     download_wordlists()
-    
+
     print("\n" + "="*60)
     print(f"下载完成! 成功: {success_count}/{len(tools)}")
     print("="*60)

@@ -51,8 +51,8 @@ from .web import (
 from .vuln_scan import (
     BatchScanWidget,
     CVESearchWidget,
-    ScannerWidget,
-    LeakScannerWidget,
+    PoCManagerWidget,
+    ExploitSearchWidget,
 )
 
 from .password import (
@@ -134,6 +134,8 @@ from .tools import (
     CryptoWidget,
     ClassicCipherWidget,
 )
+
+from .ai_assistant import AIAssistantWidget
 
 from .gen import (
     PasswordGenWidget,

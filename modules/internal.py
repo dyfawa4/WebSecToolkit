@@ -16,7 +16,7 @@ from pathlib import Path
 @register_module("internal_info")
 class InternalInfoWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("内网信息收集")
+        super().__init__("internal_info", "内网信息收集")
         self._seatbelt_path = self._find_tool("Seatbelt")
     
     def _find_tool(self, tool_name: str) -> str:
@@ -206,7 +206,7 @@ class InternalInfoWidget(BaseModuleWidget):
 @register_module("credential")
 class CredentialWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("凭证窃取")
+        super().__init__("credential", "凭证窃取")
         self._mimikatz_path = self._find_tool("mimikatz")
         self._rubeus_path = self._find_tool("Rubeus")
     
@@ -456,7 +456,7 @@ class CredentialWidget(BaseModuleWidget):
 @register_module("lateral")
 class LateralMovementWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("横向移动")
+        super().__init__("lateral", "横向移动")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -517,7 +517,7 @@ class LateralMovementWidget(BaseModuleWidget):
 @register_module("persistence")
 class PersistenceWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("权限维持")
+        super().__init__("persistence", "权限维持")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -569,7 +569,7 @@ class PersistenceWidget(BaseModuleWidget):
 @register_module("privilege")
 class PrivilegeEscalationWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("权限提升")
+        super().__init__("privilege", "权限提升")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

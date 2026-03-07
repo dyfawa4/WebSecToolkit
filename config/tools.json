@@ -6,7 +6,7 @@
         "name": "Nmap",
         "description": "网络发现和安全审计工具",
         "type": "executable",
-        "version": "7.94",
+        "version": "7.95",
         "category": "network"
       },
       "naabu": {
@@ -14,7 +14,15 @@
         "name": "Naabu",
         "description": "快速端口扫描器",
         "type": "executable",
-        "version": "2.1.0",
+        "version": "2.3.0",
+        "category": "network"
+      },
+      "rustscan": {
+        "path": "tools/rustscan.exe",
+        "name": "RustScan",
+        "description": "极速端口扫描器，3秒扫完65535端口",
+        "type": "executable",
+        "version": "2.4.1",
         "category": "network"
       }
     },
@@ -24,15 +32,15 @@
         "name": "Subfinder",
         "description": "快速子域名发现工具",
         "type": "executable",
-        "version": "2.5.0",
+        "version": "2.6.0",
         "category": "recon"
       },
-      "amass": {
-        "path": "tools/amass/amass_Windows_amd64/amass.exe",
-        "name": "Amass",
-        "description": "综合OSINT框架",
+      "subdominator": {
+        "path": "tools/subdominator.exe",
+        "name": "Subdominator",
+        "description": "新一代子域名发现工具，更多数据源",
         "type": "executable",
-        "version": "3.21.0",
+        "version": "1.72",
         "category": "recon"
       },
       "assetfinder": {
@@ -40,7 +48,7 @@
         "name": "Assetfinder",
         "description": "查找与域名相关的子域名和资产",
         "type": "executable",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "category": "recon"
       }
     },
@@ -50,7 +58,7 @@
         "name": "Dirsearch",
         "description": "Python目录扫描器",
         "type": "python",
-        "version": "0.4.0",
+        "version": "0.4.3",
         "category": "web"
       },
       "gobuster": {
@@ -66,7 +74,15 @@
         "name": "FFUF",
         "description": "快速Web模糊测试工具",
         "type": "executable",
-        "version": "2.0.0",
+        "version": "2.1.0",
+        "category": "web"
+      },
+      "feroxbuster": {
+        "path": "tools/feroxbuster.exe",
+        "name": "Feroxbuster",
+        "description": "Rust编写的快速目录扫描器",
+        "type": "executable",
+        "version": "2.13.1",
         "category": "web"
       }
     },
@@ -76,7 +92,7 @@
         "name": "HTTPX",
         "description": "HTTP工具包",
         "type": "executable",
-        "version": "1.3.0",
+        "version": "1.6.0",
         "category": "web"
       },
       "nuclei": {
@@ -84,9 +100,35 @@
         "name": "Nuclei",
         "description": "基于模板的漏洞扫描器",
         "type": "executable",
-        "version": "3.0.0",
+        "version": "3.2.0",
         "category": "scanner",
         "templates": "tools/nuclei-templates"
+      }
+    },
+    "crawler": {
+      "katana": {
+        "path": "tools/katana/katana.exe",
+        "name": "Katana",
+        "description": "现代爬虫框架",
+        "type": "executable",
+        "version": "1.1.0",
+        "category": "web"
+      },
+      "waybackurls": {
+        "path": "tools/waybackurls/waybackurls.exe",
+        "name": "WaybackUrls",
+        "description": "从Wayback机器获取历史URL",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "web"
+      },
+      "httprobe": {
+        "path": "tools/httprobe/httprobe.exe",
+        "name": "HTTProbe",
+        "description": "HTTP探测工具",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "web"
       }
     },
     "ssl_analyzer": {
@@ -95,7 +137,7 @@
         "name": "TLSX",
         "description": "TLS配置扫描器",
         "type": "executable",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "category": "crypto"
       }
     },
@@ -105,7 +147,7 @@
         "name": "SQLMap",
         "description": "自动SQL注入和数据库接管工具",
         "type": "python",
-        "version": "1.7.0",
+        "version": "1.8.0",
         "category": "exploit"
       }
     },
@@ -115,21 +157,21 @@
         "name": "Dalfox",
         "description": "XSS扫描和分析工具",
         "type": "executable",
-        "version": "2.8.0",
+        "version": "2.9.0",
         "category": "exploit"
       }
     },
     "hash_crack": {
       "john": {
         "path": "tools/john/JtR/run/john.exe",
-        "name": "John the Ripper",
-        "description": "快速密码破解器",
+        "name": "John the Ripper Jumbo",
+        "description": "快速密码破解器(社区增强版)",
         "type": "executable",
-        "version": "1.9.0",
+        "version": "1.9.0-jumbo",
         "category": "password"
       },
       "hashcat": {
-        "path": "tools/hashcat/hashcat-6.2.6/hashcat.exe",
+        "path": "tools/hashcat/hashcat.exe",
         "name": "Hashcat",
         "description": "高级密码恢复工具",
         "type": "executable",
@@ -153,7 +195,7 @@
         "name": "SearchSploit",
         "description": "Exploit-DB命令行搜索工具",
         "type": "python",
-        "version": "2023.0",
+        "version": "2024.0",
         "category": "exploit"
       }
     },
@@ -163,44 +205,60 @@
         "name": "Nuclei",
         "description": "批量漏洞扫描",
         "type": "executable",
-        "version": "3.0.0",
+        "version": "3.2.0",
         "category": "scanner",
         "templates": "tools/nuclei-templates"
+      },
+      "trivy": {
+        "path": "tools/trivy.exe",
+        "name": "Trivy",
+        "description": "容器安全扫描工具",
+        "type": "executable",
+        "version": "0.69.3",
+        "category": "scanner"
+      },
+      "grype": {
+        "path": "tools/grype/grype.exe",
+        "name": "Grype",
+        "description": "容器/文件系统漏洞扫描",
+        "type": "executable",
+        "version": "0.77.0",
+        "category": "scanner"
       }
     },
     "http_proxy": {
-      "chisel": {
-        "path": "tools/proxy/chisel.exe",
-        "name": "Chisel",
-        "description": "快速TCP隧道",
+      "frpc": {
+        "path": "tools/proxy/frp/frp_0.58.0_windows_amd64/frpc.exe",
+        "name": "frp Client",
+        "description": "快速反向代理客户端",
         "type": "executable",
-        "version": "1.9.0",
+        "version": "0.58.0",
+        "category": "proxy"
+      },
+      "frps": {
+        "path": "tools/proxy/frp/frp_0.58.0_windows_amd64/frps.exe",
+        "name": "frp Server",
+        "description": "快速反向代理服务端",
+        "type": "executable",
+        "version": "0.58.0",
         "category": "proxy"
       },
       "gost": {
-        "path": "tools/proxy/gost/gost-windows-amd64.exe",
-        "name": "Gost",
-        "description": "简单的安全隧道",
+        "path": "tools/proxy/gost/gost.exe",
+        "name": "Gost v3",
+        "description": "GO Simple Tunnel v3",
         "type": "executable",
-        "version": "2.11.0",
+        "version": "3.0.0",
         "category": "proxy"
       }
     },
     "internal_info": {
-      "bloodhound": {
-        "path": "tools/internal/BloodHound.py-master/bloodhound.py",
-        "name": "BloodHound.py",
-        "description": "Active Directory关系映射",
-        "type": "python",
-        "version": "1.0.0",
-        "category": "internal"
-      },
       "seatbelt": {
         "path": "tools/dotnet/Seatbelt.exe",
         "name": "Seatbelt",
         "description": "Windows安全配置审计工具",
         "type": "executable",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "category": "internal"
       },
       "rubeus": {
@@ -208,7 +266,7 @@
         "name": "Rubeus",
         "description": "Kerberos攻击工具",
         "type": "executable",
-        "version": "2.0.0",
+        "version": "2.3.0",
         "category": "internal"
       }
     },
@@ -223,40 +281,66 @@
       }
     },
     "tunnel": {
-      "chisel": {
-        "path": "tools/proxy/chisel.exe",
-        "name": "Chisel",
-        "description": "TCP隧道",
+      "frpc": {
+        "path": "tools/proxy/frp/frp_0.58.0_windows_amd64/frpc.exe",
+        "name": "frp Client",
+        "description": "快速反向代理客户端",
         "type": "executable",
-        "version": "1.9.0",
+        "version": "0.58.0",
+        "category": "proxy"
+      },
+      "frps": {
+        "path": "tools/proxy/frp/frp_0.58.0_windows_amd64/frps.exe",
+        "name": "frp Server",
+        "description": "快速反向代理服务端",
+        "type": "executable",
+        "version": "0.58.0",
         "category": "proxy"
       },
       "gost": {
-        "path": "tools/proxy/gost/gost-windows-amd64.exe",
-        "name": "Gost",
-        "description": "安全隧道",
+        "path": "tools/proxy/gost/gost.exe",
+        "name": "Gost v3",
+        "description": "GO Simple Tunnel v3",
         "type": "executable",
-        "version": "2.11.0",
+        "version": "3.0.0",
         "category": "proxy"
       }
     },
-    "leak": {
-      "gitleaks": {
-        "path": "tools/leak/gitleaks.exe",
-        "name": "GitLeaks",
-        "description": "Git和文件系统密钥检测",
+    "search_engine": {
+      "uncover": {
+        "path": "tools/uncover/uncover.exe",
+        "name": "Uncover",
+        "description": "搜索引擎聚合查询(Shodan/Censys/FOFA)",
         "type": "executable",
-        "version": "8.0.0",
-        "category": "scanner"
+        "version": "1.0.0",
+        "category": "recon"
       }
     },
-    "scanner": {
-      "whatweb": {
-        "path": "tools/scanner/WhatWeb-master/whatweb",
-        "name": "WhatWeb",
-        "description": "Web技术识别",
-        "type": "ruby",
-        "version": "0.5.0",
+    "cloud": {
+      "cloudlist": {
+        "path": "tools/cloudlist/cloudlist.exe",
+        "name": "Cloudlist",
+        "description": "多云平台资产发现",
+        "type": "executable",
+        "version": "1.0.0",
+        "category": "recon"
+      },
+      "cdncheck": {
+        "path": "tools/cdncheck.exe",
+        "name": "CDNCheck",
+        "description": "CDN检测工具",
+        "type": "executable",
+        "version": "1.1.0",
+        "category": "recon"
+      }
+    },
+    "oob": {
+      "interactsh": {
+        "path": "tools/interactsh/interactsh-client.exe",
+        "name": "Interactsh",
+        "description": "带外交互检测服务",
+        "type": "executable",
+        "version": "1.2.0",
         "category": "scanner"
       }
     },
@@ -266,18 +350,36 @@
         "name": "DNSX",
         "description": "DNS工具包",
         "type": "executable",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "category": "network"
       }
     },
-    "http_probe": {
-      "httprobe": {
-        "path": "tools/httprobe/httprobe.exe",
-        "name": "Httprobe",
-        "description": "HTTP探测工具",
+    "leak": {
+      "gitleaks": {
+        "path": "tools/leak/gitleaks.exe",
+        "name": "GitLeaks",
+        "description": "Git和文件系统密钥检测",
+        "type": "executable",
+        "version": "8.18.0",
+        "category": "scanner"
+      },
+      "trufflehog": {
+        "path": "tools/leak/trufflehog/trufflehog.exe",
+        "name": "TruffleHog",
+        "description": "Git仓库密钥扫描",
+        "type": "executable",
+        "version": "3.70.0",
+        "category": "scanner"
+      }
+    },
+    "notify": {
+      "notify": {
+        "path": "tools/notify/notify.exe",
+        "name": "Notify",
+        "description": "多平台通知工具",
         "type": "executable",
         "version": "1.0.0",
-        "category": "recon"
+        "category": "utility"
       }
     }
   },
@@ -290,6 +392,41 @@
     "password": "密码破解",
     "proxy": "代理隧道",
     "internal": "内网渗透",
-    "crypto": "加密解密"
+    "crypto": "加密解密",
+    "utility": "实用工具",
+    "cloud": "云安全"
+  },
+  "ai_service": {
+    "enabled": true,
+    "default_provider": "",
+    "providers": {},
+    "settings": {
+      "temperature": 0.7,
+      "max_tokens": 4096,
+      "stream": true,
+      "auto_analyze": true
+    },
+    "provider_templates": {
+      "openai": {
+        "type": "openai",
+        "base_url": "https://api.openai.com/v1",
+        "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]
+      },
+      "anthropic": {
+        "type": "anthropic",
+        "base_url": "https://api.anthropic.com/v1",
+        "models": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+      },
+      "deepseek": {
+        "type": "deepseek",
+        "base_url": "https://api.deepseek.com/v1",
+        "models": ["deepseek-chat", "deepseek-coder"]
+      },
+      "qwen": {
+        "type": "qwen",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "models": ["qwen-turbo", "qwen-plus", "qwen-max"]
+      }
+    }
   }
 }

@@ -31,7 +31,7 @@ from gui.widgets.base_module import BaseModuleWidget, LogLevel
 class RequestBuilderWidget(BaseModuleWidget):
     def __init__(self):
         self._request_history = []
-        super().__init__("请求构造器")
+        super().__init__("request_builder", "请求构造器")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -200,7 +200,7 @@ class RequestBuilderWidget(BaseModuleWidget):
 class RepeaterWidget(BaseModuleWidget):
     def __init__(self):
         self._history = []
-        super().__init__("请求重放")
+        super().__init__("request_replay", "请求重放")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -318,7 +318,7 @@ class RepeaterWidget(BaseModuleWidget):
 @register_module("intruder")
 class IntruderWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("入侵者")
+        super().__init__("intruder", "入侵者")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -496,7 +496,7 @@ class IntruderWidget(BaseModuleWidget):
 @register_module("base_encoder")
 class BaseEncoderWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Base编码")
+        super().__init__("base_encoder", "Base编码")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -716,7 +716,7 @@ class BaseEncoderWidget(BaseModuleWidget):
 @register_module("url_encoder")
 class URLEncoderWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("URL编码")
+        super().__init__("url_encoder", "URL编码")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -831,7 +831,7 @@ class URLEncoderWidget(BaseModuleWidget):
 @register_module("hash_calc")
 class HashCalcWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("Hash计算")
+        super().__init__("hash_calc", "Hash计算")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -986,7 +986,7 @@ class HashCalcWidget(BaseModuleWidget):
 @register_module("jwt_encoder")
 class JWTEncoderWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("JWT处理")
+        super().__init__("jwt_encoder", "JWT处理")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1170,7 +1170,7 @@ class JWTEncoderWidget(BaseModuleWidget):
 @register_module("crypto")
 class CryptoWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("加解密工具")
+        super().__init__("crypto", "加解密工具")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()
@@ -1322,7 +1322,7 @@ class CryptoWidget(BaseModuleWidget):
 @register_module("classic_cipher")
 class ClassicCipherWidget(BaseModuleWidget):
     def __init__(self):
-        super().__init__("古典密码")
+        super().__init__("classic_cipher", "古典密码")
     
     def _create_options_widget(self) -> QWidget:
         widget = QWidget()

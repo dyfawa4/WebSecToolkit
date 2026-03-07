@@ -11,15 +11,15 @@ from gui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
-    
+
     app.setStyle('Fusion')
-    
+
     font = QFont("Microsoft YaHei", 10)
     app.setFont(font)
-    
+
     window = MainWindow()
     window.show()
-    
+
     sys.exit(app.exec())
 
 
