@@ -11,7 +11,7 @@
 
 **WebSec Toolkit** is a comprehensive Web Security Integrated Tool designed for penetration testers, security researchers, and bug bounty hunters. It provides a user-friendly GUI interface that integrates multiple popular security tools, enabling efficient security assessments and vulnerability discovery.
 
-![Version](https://img.shields.io/badge/Version-v1.01-blue.svg)
+![Version](https://img.shields.io/badge/Version-v1.1.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.6+-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
@@ -189,6 +189,8 @@ PyYAML>=6.0.0
 | Vulnerability Scanning | SQLMap | Automatic SQL injection tool |
 | Vulnerability Scanning | Dalfox | XSS scanning and analysis tool |
 | Vulnerability Scanning | SearchSploit | Exploit database search |
+| Vulnerability Scanning | SSTImap | Server-Side Template Injection detection and exploitation |
+| Vulnerability Scanning | Fenjing | Flask/Jinja2 SSTI exploitation tool for CTF |
 | Password Cracking | Hashcat | Advanced password recovery |
 | Password Cracking | John | Password security auditing tool |
 | Password Cracking | Hydra | Network logon cracker |
@@ -518,6 +520,8 @@ PyYAML>=6.0.0
 | 漏洞扫描 | SQLMap | 自动SQL注入工具 |
 | 漏洞扫描 | Dalfox | XSS扫描和分析工具 |
 | 漏洞扫描 | SearchSploit | 漏洞数据库搜索 |
+| 漏洞扫描 | SSTImap | 服务端模板注入检测与利用 |
+| 漏洞扫描 | Fenjing | Flask/Jinja2 SSTI漏洞利用工具(CTF专用) |
 | 密码破解 | Hashcat | 高级密码恢复工具 |
 | 密码破解 | John | 密码安全审计工具 |
 | 密码破解 | Hydra | 网络登录破解器 |

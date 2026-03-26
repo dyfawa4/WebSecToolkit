@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.0] - 2026-03-26
+
+### ✨ New Features
+
+#### 🔍 SSTI 模块集成
+- **Fenjing**: Flask/Jinja2 SSTI漏洞利用工具，CTF专用
+  - 支持 scan、crack、crack-path、crack-json、crack-request 模式
+  - 支持多种模板环境：flask、jinja2、tornado、django
+  - 支持自定义命令执行和编码绕过
+  - 支持 GET/POST 请求方法
+  - 支持 accurate/fast 检测模式
+
+- **SSTImap**: 服务端模板注入(SSTI)检测与利用工具
+  - 支持多种模板引擎自动检测
+  - 支持 OS Shell、交互模式、命令执行
+  - 支持多种注入技术：渲染(R)、错误(E)、布尔盲注(B)、时间盲注(T)
+  - 支持 1-5 级检测深度
+  - 支持随机 User-Agent 和 SSL 验证
+
+### 🔧 Tool Manager Enhancement
+- 新增 `python_module` 工具类型支持
+- 支持以模块方式运行的 Python 工具 (如 `python -m fenjing`)
+- 添加 `_get_tool_info()` 方法获取完整工具信息
+- 优化工具配置加载逻辑
+
+### 📝 UI Improvements
+- 更新 SSTI 模块 UI，支持工具选择标签页
+- 添加 SSTImap 选项配置面板
+- 添加 Fenjing 选项配置面板
+- 添加高级选项配置（代理、超时、自定义头部、Cookies）
+- 优化结果表格显示
+
+### 📦 Tool Files
+- 添加 Fenjing 工具完整源码
+- 添加 SSTImap 工具完整源码
+- 更新工具下载链接配置
+
+---
+
 ## [v1.0.1] - 2026-03-07
 
 ### 🐛 Bug Fixes

@@ -51,7 +51,7 @@ def build():
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "--name=SecurityToolkit",
+        "--name=WebSecToolkit",
         "--windowed",
         "--onefile",
         "--clean",
@@ -60,7 +60,6 @@ def build():
         f"--add-data={PROJECT_ROOT / 'wordlists'};wordlists",
         f"--add-data={PROJECT_ROOT / 'payloads'};payloads",
         f"--add-data={PROJECT_ROOT / 'templates'};templates",
-        f"--add-data={PROJECT_ROOT / 'tools'};tools",
         f"--icon={PROJECT_ROOT / 'assets' / 'icon.ico'}",
         str(main_py)
     ]
@@ -82,15 +81,15 @@ def build():
 def create_portable():
     print("\n创建便携版...")
 
-    portable_dir = DIST_DIR / "SecurityToolkit-Portable"
+    portable_dir = DIST_DIR / "WebSecToolkit-Portable"
     if portable_dir.exists():
         shutil.rmtree(portable_dir)
 
     portable_dir.mkdir(parents=True, exist_ok=True)
 
-    exe_src = DIST_DIR / "SecurityToolkit.exe"
+    exe_src = DIST_DIR / "WebSecToolkit.exe"
     if exe_src.exists():
-        shutil.copy(exe_src, portable_dir / "SecurityToolkit.exe")
+        shutil.copy(exe_src, portable_dir / "WebSecToolkit.exe")
 
     dirs_to_copy = ["config", "wordlists", "payloads", "templates", "tools"]
     for dir_name in dirs_to_copy:
@@ -99,115 +98,55 @@ def create_portable():
             dst = portable_dir / dir_name
             shutil.copytree(src, dst)
 
-    readme_content = """# Security Toolkit - 便携版
+    readme_content = """# WebSec Toolkit - 便携版
 
-
-1. 双击 `SecurityToolkit.exe` 启动程序
+## 使用方法
+1. 双击 `WebSecToolkit.exe` 启动程序
 2. 首次运行会自动创建必要的配置文件
 
-
+## 目录说明
 - `config/` - 配置文件目录
 - `wordlists/` - 字典文件目录
 - `payloads/` - Payload模板目录
 - `templates/` - 报告模板目录
 - `tools/` - 集成的安全工具
 
-
+## 注意事项
 - 请确保已安装必要的运行时环境
 - 部分安全工具可能需要管理员权限运行
 - 请在合法授权范围内使用本工具
 
-
+## 免责声明
 本工具仅供安全研究和授权测试使用，请勿用于非法用途。
 使用者需自行承担使用本工具所产生的一切法律责任。
+"""
 
+    with open(portable_dir / "README.txt", "w", encoding="utf-8") as f:
+        f.write(readme_content)
 
+    print(f"  便携版创建完成: {portable_dir}")
+    return portable_dir
 
 
+def main():
+    print("=" * 50)
+    print("WebSec Toolkit 构建脚本")
+    print("=" * 50)
 
+    clean()
+    install_pyinstaller()
 
+    if build():
+        portable_dir = create_portable()
+        print("\n" + "=" * 50)
+        print("构建完成!")
+        print(f"  EXE: {DIST_DIR / 'WebSecToolkit.exe'}")
+        print(f"  便携版: {portable_dir}")
+        print("=" * 50)
+    else:
+        print("\n构建失败，请检查错误信息")
+        sys.exit(1)
 
 
-
-
-
-
-
-[Setup]
-AppName=Security Toolkit
-AppVersion=1.0.0
-DefaultDirName={{pf}}\\SecurityToolkit
-DefaultGroupName=Security Toolkit
-OutputDir={DIST_DIR}
-OutputBaseFilename=SecurityToolkit-Setup
-Compression=lzma2
-SolidCompression=yes
-PrivilegesRequired=admin
-
-[Files]
-Source: "{DIST_DIR}\\SecurityToolkit.exe"; DestDir: "{{app}}"
-Source: "{PROJECT_ROOT}\\config\\*"; DestDir: "{{app}}\\config"; Flags: recursesubdirs
-Source: "{PROJECT_ROOT}\\wordlists\\*"; DestDir: "{{app}}\\wordlists"; Flags: recursesubdirs
-Source: "{PROJECT_ROOT}\\payloads\\*"; DestDir: "{{app}}\\payloads"; Flags: recursesubdirs
-Source: "{PROJECT_ROOT}\\templates\\*"; DestDir: "{{app}}\\templates"; Flags: recursesubdirs
-Source: "{PROJECT_ROOT}\\tools\\*"; DestDir: "{{app}}\\tools"; Flags: recursesubdirs
-
-[Icons]
-Name: "{{group}}\\Security Toolkit"; Filename: "{{app}}\\SecurityToolkit.exe"
-Name: "{{group}}\\卸载 Security Toolkit"; Filename: "{{uninstallexe}}"
-Name: "{{commondesktop}}\\Security Toolkit"; Filename: "{{app}}\\SecurityToolkit.exe"
-
-[Run]
-Filename: "{{app}}\\SecurityToolkit.exe"; Description: "启动 Security Toolkit"; Flags: nowait postinstall skipifsilent
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    main()
