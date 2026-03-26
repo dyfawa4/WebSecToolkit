@@ -4,9 +4,9 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QComboBox, QCheckBox, QSpinBox, QGroupBox,
     QFormLayout, QTextEdit, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFileDialog, QMessageBox
+    QHeaderView, QFileDialog, QMessageBox, QTabWidget, QPlainTextEdit
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import subprocess
 import threading
 import re
@@ -14,9 +14,87 @@ import os
 import tempfile
 
 
+class SSTIWorker(QThread):
+    output_received = pyqtSignal(str)
+    finished_signal = pyqtSignal(bool, list)
+    
+    def __init__(self, cmd, tool_name):
+        super().__init__()
+        self._cmd = cmd
+        self._tool_name = tool_name
+        self._is_cancelled = False
+        self._process = None
+        self._results = []
+    
+    def run(self):
+        try:
+            creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            
+            self._process = subprocess.Popen(
+                self._cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                shell=True,
+                creationflags=creation_flags
+            )
+            
+            while True:
+                if self._is_cancelled:
+                    self._process.terminate()
+                    break
+                
+                line = self._process.stdout.readline()
+                if not line:
+                    if self._process.poll() is not None:
+                        break
+                    continue
+                
+                line = line.rstrip()
+                self.output_received.emit(line)
+                
+                if self._tool_name == "sstimap":
+                    self._parse_sstimap_result(line)
+                elif self._tool_name == "fenjing":
+                    self._parse_fenjing_result(line)
+            
+            self.finished_signal.emit(True, self._results)
+            
+        except Exception as e:
+            self.output_received.emit(f"Error: {str(e)}")
+            self.finished_signal.emit(False, self._results)
+    
+    def _parse_sstimap_result(self, line: str):
+        if '[+]' in line:
+            if 'injection point' in line.lower():
+                self._results.append({'type': 'vuln', 'line': line})
+            elif 'Shell command execution' in line:
+                self._results.append({'type': 'capability', 'capability': 'RCE', 'line': line})
+            elif 'File read' in line:
+                self._results.append({'type': 'capability', 'capability': 'File Read', 'line': line})
+            elif 'File write' in line:
+                self._results.append({'type': 'capability', 'capability': 'File Write', 'line': line})
+        elif 'Engine:' in line:
+            match = re.search(r'Engine:\s*(\w+)', line)
+            if match:
+                self._results.append({'type': 'engine', 'engine': match.group(1), 'line': line})
+    
+    def _parse_fenjing_result(self, line: str):
+        if 'found' in line.lower() or 'success' in line.lower():
+            self._results.append({'type': 'success', 'line': line})
+        if 'payload' in line.lower():
+            self._results.append({'type': 'payload', 'line': line})
+    
+    def cancel(self):
+        self._is_cancelled = True
+        if self._process:
+            self._process.terminate()
+
+
 @register_module("ssti")
 class SSTIScannerWidget(BaseModuleWidget):
     def __init__(self):
+        self._worker = None
         super().__init__("ssti", "SSTI模板注入")
     
     def _create_options_widget(self) -> QWidget:
@@ -24,33 +102,162 @@ class SSTIScannerWidget(BaseModuleWidget):
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        options_group = QGroupBox("SSTI检测选项")
-        form_layout = QFormLayout(options_group)
+        tabs = QTabWidget()
+        
+        tool_tab = QWidget()
+        tool_layout = QVBoxLayout(tool_tab)
+        
+        tool_group = QGroupBox("工具选择")
+        tool_form = QFormLayout(tool_group)
+        
+        self._tool_combo = QComboBox()
+        self._setup_combo(self._tool_combo, [
+            "内置检测", "SSTImap", "Fenjing"
+        ])
+        self._tool_combo.currentTextChanged.connect(self._on_tool_changed)
+        tool_form.addRow("扫描工具:", self._tool_combo)
+        
+        tool_layout.addWidget(tool_group)
+        
+        self._builtin_group = QGroupBox("内置检测选项")
+        builtin_form = QFormLayout(self._builtin_group)
         
         self._template_combo = QComboBox()
         self._setup_combo(self._template_combo, [
-            "Jinja2", "Twig", "Freemarker", "Velocity", "Smarty", "Mako", "自动检测"
+            "自动检测", "Jinja2", "Twig", "Freemarker", "Velocity", "Smarty", "Mako"
         ])
-        form_layout.addRow("模板引擎:", self._template_combo)
+        builtin_form.addRow("模板引擎:", self._template_combo)
         
         self._param_input = QLineEdit()
         self._param_input.setPlaceholderText("注入参数名，如: name, id (留空自动检测)")
-        form_layout.addRow("参数名:", self._param_input)
+        builtin_form.addRow("参数名:", self._param_input)
         
         self._deep_check = QCheckBox("深度检测")
         self._deep_check.setChecked(True)
-        form_layout.addRow(self._deep_check)
+        builtin_form.addRow(self._deep_check)
         
         self._rce_check = QCheckBox("RCE测试")
-        form_layout.addRow(self._rce_check)
+        builtin_form.addRow(self._rce_check)
         
-        layout.addWidget(options_group)
+        tool_layout.addWidget(self._builtin_group)
+        
+        self._sstimap_group = QGroupBox("SSTImap选项")
+        sstimap_form = QFormLayout(self._sstimap_group)
+        
+        self._sstimap_mode_combo = QComboBox()
+        self._setup_combo(self._sstimap_mode_combo, [
+            "检测模式", "OS Shell", "交互模式", "执行命令"
+        ])
+        sstimap_form.addRow("运行模式:", self._sstimap_mode_combo)
+        
+        self._sstimap_cmd_input = QLineEdit()
+        self._sstimap_cmd_input.setPlaceholderText("要执行的命令 (OS Shell模式)")
+        sstimap_form.addRow("命令:", self._sstimap_cmd_input)
+        
+        self._sstimap_technique_combo = QComboBox()
+        self._setup_combo(self._sstimap_technique_combo, [
+            "全部", "R (渲染)", "E (错误)", "B (布尔盲注)", "T (时间盲注)"
+        ])
+        sstimap_form.addRow("技术:", self._sstimap_technique_combo)
+        
+        self._sstimap_level_spin = QSpinBox()
+        self._sstimap_level_spin.setRange(1, 5)
+        self._sstimap_level_spin.setValue(1)
+        sstimap_form.addRow("检测级别:", self._sstimap_level_spin)
+        
+        self._sstimap_random_agent = QCheckBox("随机User-Agent")
+        sstimap_form.addRow(self._sstimap_random_agent)
+        
+        self._sstimap_verify_ssl = QCheckBox("验证SSL")
+        sstimap_form.addRow(self._sstimap_verify_ssl)
+        
+        self._sstimap_group.setVisible(False)
+        tool_layout.addWidget(self._sstimap_group)
+        
+        self._fenjing_group = QGroupBox("Fenjing选项")
+        fenjing_form = QFormLayout(self._fenjing_group)
+        
+        self._fenjing_mode_combo = QComboBox()
+        self._setup_combo(self._fenjing_mode_combo, [
+            "scan - 扫描网站", "crack - 攻击表单", "crack-path - 攻击路径", 
+            "crack-json - 攻击JSON API", "crack-request - 请求文件攻击"
+        ])
+        fenjing_form.addRow("运行模式:", self._fenjing_mode_combo)
+        
+        self._fenjing_inputs_input = QLineEdit()
+        self._fenjing_inputs_input.setPlaceholderText("参数名，如: name, id (crack模式)")
+        fenjing_form.addRow("参数:", self._fenjing_inputs_input)
+        
+        self._fenjing_method_combo = QComboBox()
+        self._setup_combo(self._fenjing_method_combo, ["GET", "POST"])
+        fenjing_form.addRow("请求方法:", self._fenjing_method_combo)
+        
+        self._fenjing_detect_combo = QComboBox()
+        self._setup_combo(self._fenjing_detect_combo, ["accurate", "fast"])
+        fenjing_form.addRow("检测模式:", self._fenjing_detect_combo)
+        
+        self._fenjing_env_combo = QComboBox()
+        self._setup_combo(self._fenjing_env_combo, [
+            "flask", "jinja2", "tornado", "django"
+        ])
+        fenjing_form.addRow("模板环境:", self._fenjing_env_combo)
+        
+        self._fenjing_cmd_input = QLineEdit()
+        self._fenjing_cmd_input.setPlaceholderText("成功后执行的命令")
+        fenjing_form.addRow("执行命令:", self._fenjing_cmd_input)
+        
+        self._fenjing_tamper_input = QLineEdit()
+        self._fenjing_tamper_input.setPlaceholderText("编码命令，如: base64, rev")
+        fenjing_form.addRow("编码:", self._fenjing_tamper_input)
+        
+        self._fenjing_eval_args = QCheckBox("使用GET参数传递payload")
+        fenjing_form.addRow(self._fenjing_eval_args)
+        
+        self._fenjing_group.setVisible(False)
+        tool_layout.addWidget(self._fenjing_group)
+        
+        tabs.addTab(tool_tab, "工具选项")
+        
+        advanced_tab = QWidget()
+        advanced_layout = QVBoxLayout(advanced_tab)
+        
+        advanced_group = QGroupBox("高级选项")
+        advanced_form = QFormLayout(advanced_group)
+        
+        self._proxy_input = QLineEdit()
+        self._proxy_input.setPlaceholderText("代理地址，如: http://127.0.0.1:8080")
+        advanced_form.addRow("代理:", self._proxy_input)
+        
+        self._timeout_spin = QSpinBox()
+        self._timeout_spin.setRange(1, 300)
+        self._timeout_spin.setValue(30)
+        self._timeout_spin.setSuffix(" 秒")
+        advanced_form.addRow("超时:", self._timeout_spin)
+        
+        self._headers_input = QLineEdit()
+        self._headers_input.setPlaceholderText("自定义头部，如: Authorization: Bearer xxx")
+        advanced_form.addRow("自定义头部:", self._headers_input)
+        
+        self._cookies_input = QLineEdit()
+        self._cookies_input.setPlaceholderText("Cookie字符串")
+        advanced_form.addRow("Cookies:", self._cookies_input)
+        
+        advanced_layout.addWidget(advanced_group)
+        advanced_layout.addStretch()
+        tabs.addTab(advanced_tab, "高级选项")
+        
+        layout.addWidget(tabs)
         return widget
+    
+    def _on_tool_changed(self, tool_name: str):
+        self._builtin_group.setVisible(tool_name == "内置检测")
+        self._sstimap_group.setVisible(tool_name == "SSTImap")
+        self._fenjing_group.setVisible(tool_name == "Fenjing")
     
     def _create_result_table(self) -> QTableWidget:
         table = QTableWidget()
-        table.setColumnCount(4)
-        table.setHorizontalHeaderLabels(["参数", "模板引擎", "Payload", "证据"])
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["参数/类型", "模板引擎", "Payload", "能力/证据", "详情"])
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setAlternatingRowColors(True)
@@ -59,11 +266,22 @@ class SSTIScannerWidget(BaseModuleWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
         
         return table
     
     def _do_scan(self):
+        tool = self._tool_combo.currentText()
+        
+        if tool == "内置检测":
+            self._scan_builtin()
+        elif tool == "SSTImap":
+            self._scan_with_sstimap()
+        elif tool == "Fenjing":
+            self._scan_with_fenjing()
+    
+    def _scan_builtin(self):
         import requests
         
         target = self._target_input.text().strip()
@@ -100,7 +318,7 @@ class SSTIScannerWidget(BaseModuleWidget):
                 resp = requests.get(test_url, timeout=10, verify=False)
                 
                 if evidence in resp.text:
-                    self._add_result(param, engine, payload, f"发现{evidence}")
+                    self._add_result(param, engine, payload, f"发现{evidence}", "")
                     self._add_log(LogLevel.SUCCESS, f"发现SSTI漏洞 - {engine}")
                     
                     if self._rce_check.isChecked():
@@ -125,10 +343,180 @@ class SSTIScannerWidget(BaseModuleWidget):
                 resp = requests.get(test_url, timeout=10, verify=False)
                 
                 if any(indicator in resp.text.lower() for indicator in ['root:', 'uid=', 'administrator']):
-                    self._add_result(param, f"{engine} RCE", payload, "命令执行成功")
+                    self._add_result(param, f"{engine} RCE", payload, "命令执行成功", "")
                     self._add_log(LogLevel.SUCCESS, f"发现RCE: {engine}")
             except:
                 pass
+    
+    def _scan_with_sstimap(self):
+        if not self._is_tool_available("sstimap"):
+            self._add_log(LogLevel.ERROR, "SSTImap 工具不可用，请检查路径")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        sstimap_path = self._get_tool_path("sstimap")
+        
+        cmd_parts = [
+            'python',
+            f'"{sstimap_path}"',
+            '-u', f'"{target}"'
+        ]
+        
+        mode = self._sstimap_mode_combo.currentText()
+        if mode == "OS Shell":
+            cmd_parts.append('--os-shell')
+        elif mode == "交互模式":
+            cmd_parts.append('-i')
+        elif mode == "执行命令":
+            cmd = self._sstimap_cmd_input.text().strip()
+            if cmd:
+                cmd_parts.extend(['--os-cmd', f'"{cmd}"'])
+        
+        technique = self._sstimap_technique_combo.currentText()
+        if technique != "全部":
+            tech_map = {
+                "R (渲染)": "R", "E (错误)": "E", 
+                "B (布尔盲注)": "B", "T (时间盲注)": "T"
+            }
+            cmd_parts.extend(['--technique', tech_map.get(technique, technique[0])])
+        
+        cmd_parts.extend(['--level', str(self._sstimap_level_spin.value())])
+        
+        if self._sstimap_random_agent.isChecked():
+            cmd_parts.append('-A')
+        
+        if self._sstimap_verify_ssl.isChecked():
+            cmd_parts.append('--verify-ssl')
+        
+        proxy = self._proxy_input.text().strip()
+        if proxy:
+            cmd_parts.extend(['--proxy', proxy])
+        
+        cmd = ' '.join(cmd_parts)
+        self._add_log(LogLevel.INFO, f"执行 SSTImap: {cmd}")
+        
+        self._worker = SSTIWorker(cmd, "sstimap")
+        self._worker.output_received.connect(self._on_sstimap_output)
+        self._worker.finished_signal.connect(self._on_sstimap_finished)
+        self._worker.start()
+    
+    def _on_sstimap_output(self, line: str):
+        if '[+]' in line:
+            self._add_log(LogLevel.SUCCESS, line)
+        elif '[!]' in line:
+            self._add_log(LogLevel.WARNING, line)
+        elif '[*]' in line:
+            self._add_log(LogLevel.INFO, line)
+        elif 'error' in line.lower():
+            self._add_log(LogLevel.ERROR, line)
+    
+    def _on_sstimap_finished(self, success: bool, results: list):
+        engine = ""
+        for result in results:
+            if result.get('type') == 'engine':
+                engine = result.get('engine', '')
+            elif result.get('type') == 'vuln':
+                self._add_result("SSTI漏洞", engine, "", "检测成功", result.get('line', '')[:50])
+            elif result.get('type') == 'capability':
+                self._add_result("能力", "", "", result.get('capability', ''), result.get('line', '')[:50])
+        
+        self._add_log(LogLevel.SUCCESS, f"SSTImap 扫描完成，发现 {len(results)} 个结果")
+    
+    def _scan_with_fenjing(self):
+        if not self._is_tool_available("fenjing"):
+            self._add_log(LogLevel.ERROR, "Fenjing 工具不可用，请检查路径")
+            return
+        
+        target = self._target_input.text().strip()
+        if not target:
+            self._add_log(LogLevel.ERROR, "请输入目标URL")
+            return
+        
+        if not target.startswith(('http://', 'https://')):
+            target = 'http://' + target
+        
+        fenjing_info = self._get_tool_info("fenjing")
+        fenjing_path = fenjing_info.path if fenjing_info else None
+        fenjing_module = fenjing_info.module if fenjing_info and hasattr(fenjing_info, 'module') else "fenjing"
+        
+        mode_text = self._fenjing_mode_combo.currentText()
+        mode = mode_text.split(' - ')[0]
+        
+        cmd_parts = [
+            'python -m ' + fenjing_module,
+            mode,
+            '--url', f'"{target}"'
+        ]
+        
+        if mode == "crack":
+            inputs = self._fenjing_inputs_input.text().strip()
+            if inputs:
+                cmd_parts.extend(['--inputs', inputs])
+            method = self._fenjing_method_combo.currentText()
+            cmd_parts.extend(['--method', method])
+        
+        detect_mode = self._fenjing_detect_combo.currentText()
+        cmd_parts.extend(['--detect-mode', detect_mode])
+        
+        env = self._fenjing_env_combo.currentText()
+        cmd_parts.extend(['--environment', env])
+        
+        cmd = self._fenjing_cmd_input.text().strip()
+        if cmd:
+            cmd_parts.extend(['--command', f'"{cmd}"'])
+        
+        tamper = self._fenjing_tamper_input.text().strip()
+        if tamper:
+            cmd_parts.extend(['--tamper-cmd', tamper])
+        
+        if self._fenjing_eval_args.isChecked():
+            cmd_parts.append('--eval-args-payload')
+        
+        proxy = self._proxy_input.text().strip()
+        if proxy:
+            cmd_parts.extend(['--proxy', proxy])
+        
+        cmd = cmd_parts[0] + ' ' + ' '.join(cmd_parts[1:])
+        self._add_log(LogLevel.INFO, f"执行 Fenjing: {cmd}")
+        
+        self._worker = SSTIWorker(cmd, "fenjing")
+        self._worker.output_received.connect(self._on_fenjing_output)
+        self._worker.finished_signal.connect(self._on_fenjing_finished)
+        self._worker.start()
+    
+    def _on_fenjing_output(self, line: str):
+        if 'success' in line.lower() or 'found' in line.lower():
+            self._add_log(LogLevel.SUCCESS, line)
+        elif 'error' in line.lower():
+            self._add_log(LogLevel.ERROR, line)
+        elif 'payload' in line.lower():
+            self._add_log(LogLevel.INFO, line)
+        else:
+            self._add_log(LogLevel.DEBUG, line)
+    
+    def _on_fenjing_finished(self, success: bool, results: list):
+        for result in results:
+            self._add_result(
+                "Fenjing",
+                result.get('type', ''),
+                '',
+                '',
+                result.get('line', '')[:50]
+            )
+        
+        self._add_log(LogLevel.SUCCESS, f"Fenjing 扫描完成，发现 {len(results)} 个结果")
+    
+    def stop_scan(self):
+        if self._worker:
+            self._worker.cancel()
+        super().stop_scan()
 
 
 @register_module("lfi_rfi")

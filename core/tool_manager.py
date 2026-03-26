@@ -12,6 +12,7 @@ import queue
 class ToolType(Enum):
     EXECUTABLE = "executable"
     PYTHON = "python"
+    PYTHON_MODULE = "python_module"
     PERL = "perl"
     RUBY = "ruby"
     ARCHIVE = "archive"
@@ -27,6 +28,7 @@ class ToolInfo:
     category: str = ""
     templates: Optional[Path] = None
     download_url: str = ""
+    module: str = ""
     extra: Dict[str, Any] = field(default_factory=dict)
     
     @property
@@ -42,7 +44,8 @@ class ToolInfo:
             "version": self.version,
             "category": self.category,
             "available": self.available,
-            "download_url": self.download_url
+            "download_url": self.download_url,
+            "module": self.module
         }
 
 
@@ -88,6 +91,8 @@ TOOL_DOWNLOAD_URLS = {
     "mimikatz": "https://github.com/gentilkiwi/mimikatz",
     "bloodhound": "https://github.com/dirkjanm/BloodHound.py",
     "impacket": "https://github.com/fortra/impacket",
+    "fenjing": "https://github.com/Marven11/Fenjing",
+    "sstimap": "https://github.com/vladko312/SSTImap",
 }
 
 
@@ -105,6 +110,9 @@ class ToolExecutor:
         
         if tool_type == ToolType.PYTHON:
             cmd = ["python", str(self._tool.path)] + args
+        elif tool_type == ToolType.PYTHON_MODULE:
+            module = self._tool.module or self._tool.path.name
+            cmd = ["python", "-m", module] + args
         elif tool_type == ToolType.PERL:
             cmd = ["perl", str(self._tool.path)] + args
         elif tool_type == ToolType.RUBY:
@@ -220,6 +228,8 @@ class ToolManager:
                     
                     download_url = TOOL_DOWNLOAD_URLS.get(tool_name, "")
                     
+                    module = tool_data.get("module", "")
+                    
                     self._tools[module_id][tool_name] = ToolInfo(
                         name=tool_data.get("name", tool_name),
                         path=tool_path,
@@ -229,8 +239,9 @@ class ToolManager:
                         category=tool_data.get("category", ""),
                         templates=templates,
                         download_url=download_url,
+                        module=module,
                         extra={k: v for k, v in tool_data.items() 
-                               if k not in ["name", "path", "description", "type", "version", "category", "templates"]}
+                               if k not in ["name", "path", "description", "type", "version", "category", "templates", "module"]}
                     )
         except Exception as e:
             self._load_default_tools()

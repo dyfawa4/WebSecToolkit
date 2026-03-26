@@ -343,6 +343,9 @@ class BaseModuleWidget(QWidget):
     def _get_tool_path(self, tool_name: str) -> Optional[Path]:
         return self._tool_manager.get_tool_path(self.module_id, tool_name)
     
+    def _get_tool_info(self, tool_name: str):
+        return self._tool_manager.get_tool(self.module_id, tool_name)
+    
     def _execute_tool(self, tool_name: str, args: List[str], 
                      capture_output: bool = True) -> Optional[subprocess.Popen]:
         try:
