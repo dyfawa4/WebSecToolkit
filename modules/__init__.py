@@ -137,6 +137,16 @@ from .tools import (
 
 from .ai_assistant import AIAssistantWidget
 
+from .auto_pentest import AutoPentestWidget
+
+from .workflow import (
+    WorkflowEngine,
+    WorkflowResult,
+    StageResult,
+    STAGES,
+    SCAN_MODES,
+)
+
 from .gen import (
     PasswordGenWidget,
     UsernameGenWidget,

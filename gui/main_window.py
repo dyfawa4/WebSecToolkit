@@ -271,6 +271,7 @@ class MainWindow(QMainWindow):
         
         module_ids = [
             "ai_assistant",
+            "auto_pentest",
             "port_scanner", "subdomain", "directory", "fingerprint", 
             "ssl_analyzer", "email_collector",
             "sqli", "xss", "ssrf", "rce", "xxe", "ssti", "lfi_rfi",
@@ -313,6 +314,7 @@ class MainWindow(QMainWindow):
             
             module_names = {
                 "ai_assistant": "AI助手",
+                "auto_pentest": "一键渗透",
                 "port_scanner": "端口扫描",
                 "subdomain": "子域名枚举",
                 "directory": "目录扫描",

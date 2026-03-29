@@ -10,6 +10,9 @@ MODULE_CATEGORIES = {
     "首页": [
         ("首页", "home"),
     ],
+    "自动化": [
+        ("一键渗透", "auto_pentest"),
+    ],
     "AI助手": [
         ("AI助手", "ai_assistant"),
     ],
