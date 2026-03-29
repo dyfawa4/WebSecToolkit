@@ -1,9 +1,8 @@
 import subprocess
 import threading
 import os
-import queue
 from typing import Optional, Callable, List, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -13,11 +12,81 @@ class ToolResult:
     output: str
     error: str
     return_code: int
-    findings: List[Dict] = None
-    
-    def __post_init__(self):
-        if self.findings is None:
-            self.findings = []
+    findings: List[Dict] = field(default_factory=list)
+
+
+PYTHON_TOOLS = {
+    "sqlmap", "sstimap", "fenjing", "searchsploit", "dirsearch"
+}
+
+TOOL_COMMANDS = {
+    "nmap": {
+        "quick": "-sV -sC -F --open -Pn {target}",
+        "full": "-sV -sC -p- --open -Pn {target}",
+        "vuln": "-sV --script=vuln --open -Pn {target}",
+    },
+    "naabu": {
+        "quick": "-host {target} -top-ports 100 -silent -json",
+        "full": "-host {target} -p - -silent -json",
+    },
+    "subfinder": {
+        "enum": "-d {domain} -silent -json",
+        "recursive": "-d {domain} -recursive -silent -json",
+    },
+    "ffuf": {
+        "directory": "-u {url}/FUZZ -w {wordlist} -mc 200,301,302,403,500 -t 50 -silent -json",
+        "subdomain": "-u http://FUZZ.{domain} -w {wordlist} -mc 200,301,302 -t 50 -silent -json",
+    },
+    "httpx": {
+        "probe": "-u {url} -silent -json -tech-detect -status-code -title -web-server",
+        "fingerprint": "-u {url} -silent -json -tech-detect -cdn -waf",
+    },
+    "nuclei": {
+        "quick": "-u {url} -silent -json -severity critical,high",
+        "full": "-u {url} -silent -json",
+    },
+    "katana": {
+        "crawl": "-u {url} -silent -json -aff -depth 3",
+        "passive": "-u {url} -silent -json -passive",
+    },
+    "tlsx": {
+        "analyze": "-u {target} -silent -json",
+    },
+    "dnsx": {
+        "enum": "-d {domain} -silent -json -a -aaaa -cname -mx -ns -txt",
+    },
+    "dalfox": {
+        "scan": "url {url} --silence --format json",
+    },
+    "sqlmap": {
+        "quick": "-u {url} --batch --level=1 --risk=1 --threads=5",
+        "deep": "-u {url} --batch --level=3 --risk=2 --threads=5",
+    },
+    "sstimap": {
+        "scan": "-u {url} --level 1",
+        "shell": "-u {url} --os-shell",
+    },
+    "fenjing": {
+        "scan": "scan --url {url}",
+        "crack": "crack --url {url} --inputs {params}",
+    },
+    "gitleaks": {
+        "detect": "detect --source {url} --no-git -f json",
+    },
+    "searchsploit": {
+        "search": "--json {query}",
+    },
+    "uncover": {
+        "shodan": "-q 'host:{domain}' -e shodan -silent -json",
+        "fofa": "-q 'domain={domain}' -e fofa -silent -json",
+    },
+    "cloudlist": {
+        "enum": "-d {domain} -silent -json",
+    },
+    "cdncheck": {
+        "check": "-i {target} -silent -json",
+    },
+}
 
 
 class ToolRunner:
@@ -26,8 +95,7 @@ class ToolRunner:
         self._process: Optional[subprocess.Popen] = None
         self._is_running = False
         self._should_stop = False
-        self._output_queue = queue.Queue()
-        
+    
     def get_tool_path(self, tool_category: str, tool_name: str) -> Optional[str]:
         if self.tool_manager:
             tool_info = self.tool_manager.get_tool(tool_category, tool_name)
@@ -40,7 +108,7 @@ class ToolRunner:
             return self.tool_manager.is_tool_available(tool_category, tool_name)
         return False
     
-    def run(self, 
+    def run(self,
             tool_category: str,
             tool_name: str,
             args: str,
@@ -59,7 +127,6 @@ class ToolRunner:
             )
         
         cmd = self._build_command(tool_name, tool_path, args)
-        
         return self._execute(cmd, timeout, output_callback, cwd)
     
     def run_command(self,
@@ -72,56 +139,9 @@ class ToolRunner:
     def _build_command(self, tool_name: str, tool_path: str, args: str) -> str:
         tool_name = tool_name.lower()
         
-        if tool_name == "nmap":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "naabu":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "subfinder":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "ffuf":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "httpx":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "nuclei":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "katana":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "tlsx":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "dnsx":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "dalfox":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "sqlmap":
+        if tool_name in PYTHON_TOOLS:
             return f'python "{tool_path}" {args}'
-        elif tool_name == "sstimap":
-            return f'python "{tool_path}" {args}'
-        elif tool_name == "fenjing":
-            return f'python -m fenjing {args}'
-        elif tool_name == "gitleaks":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "searchsploit":
-            return f'python "{tool_path}" {args}'
-        elif tool_name == "uncover":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "cloudlist":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "cdncheck":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "rustscan":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "dirsearch":
-            return f'python "{tool_path}" {args}'
-        elif tool_name == "gobuster":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "feroxbuster":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "assetfinder":
-            return f'"{tool_path}" {args}'
-        elif tool_name == "subdominator":
-            return f'"{tool_path}" {args}'
-        else:
-            return f'"{tool_path}" {args}'
+        return f'"{tool_path}" {args}'
     
     def _execute(self,
                  command: str,
@@ -147,7 +167,7 @@ class ToolRunner:
                 creationflags=creation_flags
             )
             
-            def read_stdout():
+            def read_output():
                 for line in self._process.stdout:
                     if self._should_stop:
                         break
@@ -155,21 +175,9 @@ class ToolRunner:
                     output_lines.append(line)
                     if output_callback:
                         output_callback(line)
-                    self._output_queue.put(('stdout', line))
             
-            def read_stderr():
-                for line in self._process.stderr:
-                    if self._should_stop:
-                        break
-                    line = line.rstrip()
-                    error_lines.append(line)
-                    self._output_queue.put(('stderr', line))
-            
-            stdout_thread = threading.Thread(target=read_stdout, daemon=True)
-            stderr_thread = threading.Thread(target=read_stderr, daemon=True)
-            
-            stdout_thread.start()
-            stderr_thread.start()
+            output_thread = threading.Thread(target=read_output, daemon=True)
+            output_thread.start()
             
             try:
                 self._process.wait(timeout=timeout)
@@ -182,8 +190,11 @@ class ToolRunner:
                     return_code=-1
                 )
             
-            stdout_thread.join(timeout=1)
-            stderr_thread.join(timeout=1)
+            output_thread.join(timeout=1)
+            
+            stderr_output = self._process.stderr.read()
+            if stderr_output:
+                error_lines.append(stderr_output)
             
             return_code = self._process.returncode
             
@@ -215,120 +226,6 @@ class ToolRunner:
     
     def is_running(self) -> bool:
         return self._is_running
-
-
-TOOL_COMMANDS = {
-    "nmap": {
-        "quick_scan": "-sV -sC -F --open -Pn {target}",
-        "full_scan": "-sV -sC -p- --open -Pn {target}",
-        "vuln_scan": "-sV --script=vuln --open -Pn {target}",
-        "udp_scan": "-sU --top-ports 100 --open -Pn {target}"
-    },
-    "naabu": {
-        "quick_scan": "-host {target} -top-ports 100 -silent -json",
-        "full_scan": "-host {target} -p - -silent -json",
-        "top_ports": "-host {target} -top-ports {ports} -silent -json"
-    },
-    "subfinder": {
-        "enum": "-d {domain} -silent -json",
-        "recursive": "-d {domain} -recursive -silent -json",
-        "bruteforce": "-d {domain} -silent -json -b"
-    },
-    "ffuf": {
-        "directory": "-u {url}/FUZZ -w {wordlist} -mc 200,301,302,403,500 -t 50 -silent -json",
-        "subdomain": "-u http://FUZZ.{domain} -w {wordlist} -mc 200,301,302 -t 50 -silent -json",
-        "parameter": "-u {url}?FUZZ=test -w {wordlist} -mc 200,301,302 -t 50 -silent -json"
-    },
-    "httpx": {
-        "probe": "-u {url} -silent -json -tech-detect -status-code -title -web-server",
-        "screenshot": "-u {url} -silent -json -screenshot",
-        "fingerprint": "-u {url} -silent -json -tech-detect -cdn -waf"
-    },
-    "nuclei": {
-        "quick": "-u {url} -silent -json -severity critical,high",
-        "full": "-u {url} -silent -json",
-        "custom": "-u {url} -silent -json -t {templates} -severity {severity}"
-    },
-    "katana": {
-        "crawl": "-u {url} -silent -json -aff -depth 3",
-        "passive": "-u {url} -silent -json -passive",
-        "forms": "-u {url} -silent -json -aff -form-scope"
-    },
-    "tlsx": {
-        "analyze": "-u {target} -silent -json",
-        "cert_info": "-u {target} -silent -json -cert",
-        "cipher": "-u {target} -silent -json -cipher"
-    },
-    "dnsx": {
-        "enum": "-d {domain} -silent -json -a -aaaa -cname -mx -ns -txt",
-        "bruteforce": "-d {domain} -w {wordlist} -silent -json",
-        "resolve": "-l {list} -silent -json -a -resp"
-    },
-    "dalfox": {
-        "scan": "url {url} --silence --format json",
-        "pipe": "pipe --silence --format json",
-        "custom": "url {url} --silence --format json --only-poc r"
-    },
-    "sqlmap": {
-        "quick": "-u {url} --batch --level=1 --risk=1 --threads=5",
-        "deep": "-u {url} --batch --level=3 --risk=2 --threads=5",
-        "dbs": "-u {url} --batch --dbs",
-        "tables": "-u {url} --batch -D {db} --tables",
-        "dump": "-u {url} --batch -D {db} -T {table} --dump"
-    },
-    "sstimap": {
-        "scan": "-u {url} --level 1",
-        "deep": "-u {url} --level 3",
-        "shell": "-u {url} --os-shell"
-    },
-    "fenjing": {
-        "scan": "scan --url {url}",
-        "crack": "crack --url {url} --inputs {params}",
-        "crack_path": "crack-path --url {url}",
-        "crack_json": "crack-json --url {url}"
-    },
-    "gitleaks": {
-        "detect": "detect --source {url} --no-git -f json",
-        "repo": "detect --source {repo} -f json"
-    },
-    "searchsploit": {
-        "search": "--json {query}",
-        "cve": "--cve {cve_id} --json"
-    },
-    "uncover": {
-        "shodan": "-q 'host:{domain}' -e shodan -silent -json",
-        "fofa": "-q 'domain={domain}' -e fofa -silent -json",
-        "hunter": "-q 'domain=\"{domain}\"' -e hunter -silent -json"
-    },
-    "cloudlist": {
-        "enum": "-d {domain} -silent -json"
-    },
-    "cdncheck": {
-        "check": "-i {target} -silent -json"
-    },
-    "rustscan": {
-        "quick": "-a {target} --ulimit 5000",
-        "full": "-a {target} -p- --ulimit 5000"
-    },
-    "dirsearch": {
-        "quick": "-u {url} -e php,asp,aspx,jsp,html,js -t 50 --json",
-        "full": "-u {url} -e * -t 50 --json"
-    },
-    "gobuster": {
-        "dir": "dir -u {url} -w {wordlist} -t 50 --quiet -j",
-        "dns": "dns -d {domain} -w {wordlist} -t 50 --quiet -j"
-    },
-    "feroxbuster": {
-        "scan": "-u {url} -w {wordlist} -t 50 -q --json",
-        "deep": "-u {url} -w {wordlist} -t 50 -d 5 -q --json"
-    },
-    "assetfinder": {
-        "enum": "--subs-only {domain}"
-    },
-    "subdominator": {
-        "enum": "-d {domain} -silent -json"
-    }
-}
 
 
 def get_tool_command(tool_name: str, command_type: str) -> Optional[str]:
