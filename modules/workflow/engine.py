@@ -141,6 +141,30 @@ class WorkflowEngine:
         }
         self._templates_path = "tools/nuclei-templates"
         self._parser = ResultParser()
+        
+        self._proxy = None
+        self._timeout = 300
+        self._threads = 5
+        self._retry = 3
+        self._delay = 0
+        self._custom_headers = None
+        self._cookies = None
+        
+        self._load_config()
+    
+    def _load_config(self):
+        try:
+            from gui.dialogs.settings_dialog import load_config
+            config = load_config()
+            self._threads = config.get("threads", 5)
+            self._timeout = config.get("timeout", 30) * 60
+            self._retry = config.get("retry", 3)
+            self._delay = config.get("delay", 0)
+            
+            if config.get("proxy_enabled", False):
+                self._proxy = config.get("http_proxy", "") or config.get("https_proxy", "")
+        except:
+            pass
     
     def set_tool_manager(self, tool_manager):
         self.tool_manager = tool_manager
@@ -351,6 +375,39 @@ class WorkflowEngine:
             template = template.replace(f"{{{key}}}", value)
         
         tool_name = stage.tool_name.lower()
+        
+        extra_args = []
+        
+        if self._proxy:
+            if tool_name in ["nmap"]:
+                extra_args.append(f"--proxy {self._proxy}")
+            elif tool_name in ["httpx", "nuclei", "katana", "naabu", "tlsx", "dnsx", "uncover", "cloudlist", "cdncheck"]:
+                extra_args.append(f"-proxy {self._proxy}")
+            elif tool_name in ["ffuf", "feroxbuster", "gobuster"]:
+                extra_args.append(f"-x {self._proxy}")
+            elif tool_name in ["dalfox"]:
+                extra_args.append(f"--proxy {self._proxy}")
+            elif tool_name in ["sqlmap"]:
+                extra_args.append(f"--proxy={self._proxy}")
+        
+        if self._custom_headers:
+            if tool_name in ["httpx", "nuclei", "katana"]:
+                for header in self._custom_headers.split(","):
+                    if ":" in header:
+                        extra_args.append(f"-H \"{header.strip()}\"")
+            elif tool_name in ["ffuf", "feroxbuster"]:
+                for header in self._custom_headers.split(","):
+                    if ":" in header:
+                        extra_args.append(f"-H \"{header.strip()}\"")
+        
+        if self._cookies:
+            if tool_name in ["httpx", "nuclei", "katana", "dalfox"]:
+                extra_args.append(f"-cookie \"{self._cookies}\"")
+            elif tool_name in ["sqlmap"]:
+                extra_args.append(f"--cookie=\"{self._cookies}\"")
+        
+        if extra_args:
+            template = f"{template} {' '.join(extra_args)}"
         
         if tool_name in PYTHON_TOOLS:
             return f'python "{tool_path}" {template}'

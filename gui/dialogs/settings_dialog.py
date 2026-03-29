@@ -258,6 +258,8 @@ class SettingsDialog(QDialog):
             input_widget.setText(file_path)
     
     def _save_settings(self):
+        old_language = self._config.get("language", "zh_CN")
+        
         config = {
             "language": "zh_CN" if self._lang_combo.currentIndex() == 0 else "en",
             "check_update": self._check_update_check.isChecked(),
@@ -278,7 +280,20 @@ class SettingsDialog(QDialog):
         
         if save_config(config):
             self._config = config
-            QMessageBox.information(self, "成功", "设置已保存")
+            
+            from core.i18n import set_language
+            set_language(config["language"])
+            
+            if old_language != config["language"]:
+                QMessageBox.information(
+                    self, 
+                    "成功" if config["language"] == "zh_CN" else "Success",
+                    "设置已保存\n\n语言更改需要重启应用才能完全生效" if config["language"] == "zh_CN" 
+                    else "Settings saved\n\nLanguage change requires application restart"
+                )
+            else:
+                QMessageBox.information(self, "成功", "设置已保存")
+            
             self.accept()
         else:
             QMessageBox.warning(self, "错误", "保存设置失败")

@@ -12,10 +12,15 @@ from gui.gui_styles import StyleSheet
 from gui.widgets import Sidebar, StatCard
 from gui.widgets.notification import NotificationManager
 from gui.dialogs import SettingsDialog, AboutDialog
+from gui.dialogs.settings_dialog import load_config
+from core.i18n import set_language, t
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        config = load_config()
+        set_language(config.get("language", "zh_CN"))
+        
         super().__init__()
         self._module_widgets: Dict[str, QWidget] = {}
         self._setup_window()
