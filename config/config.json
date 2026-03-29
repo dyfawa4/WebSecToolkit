@@ -1,0 +1,18 @@
+{
+    "language": "zh_CN",
+    "theme": "dark",
+    "check_update": true,
+    "restore_session": true,
+    "threads": 10,
+    "timeout": 30,
+    "retry": 3,
+    "delay": 0,
+    "auto_save": true,
+    "show_progress": true,
+    "proxy_enabled": false,
+    "http_proxy": "",
+    "https_proxy": "",
+    "socks_proxy": "",
+    "nmap_path": "",
+    "sqlmap_path": ""
+}

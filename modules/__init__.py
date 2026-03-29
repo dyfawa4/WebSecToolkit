@@ -2,6 +2,7 @@ from typing import Dict, Type, Callable
 from PyQt6.QtWidgets import QWidget
 
 _modules: Dict[str, Type[QWidget]] = {}
+MODULE_REGISTRY = _modules
 
 
 def register_module(module_id: str) -> Callable:

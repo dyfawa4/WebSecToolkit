@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "config.json")
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "config", "config.json")
 
 DEFAULT_CONFIG = {
     "theme": "dark",

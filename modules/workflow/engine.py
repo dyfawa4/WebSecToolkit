@@ -88,6 +88,8 @@ class WorkflowResult:
             sev = f.severity.lower()
             if sev in stats:
                 stats[sev] += 1
+            else:
+                stats["info"] += 1
             stage = STAGES.get(f.stage_id)
             if stage:
                 cat = stage.category.value
@@ -139,7 +141,7 @@ class WorkflowEngine:
             "lfi": "wordlists/lfi.txt",
             "redirect": "wordlists/redirect.txt"
         }
-        self._templates_path = "tools/nuclei-templates"
+        self._templates_path = "tools/nuclei-templates/nuclei-templates-main"
         self._parser = ResultParser()
         
         self._proxy = None
@@ -282,8 +284,8 @@ class WorkflowEngine:
         try:
             tool_path = self._get_tool_path(stage.tool_name, stage.tool_category)
             if not tool_path:
-                result.status = StageStatus.FAILED
-                result.error = f"工具不可用: {stage.tool_name}"
+                result.status = StageStatus.SKIPPED
+                result.error = f"工具未安装: {stage.tool_name}"
                 result.end_time = datetime.now()
                 self._emit("stage_failed", stage.id, result.error)
                 return result
@@ -300,6 +302,8 @@ class WorkflowEngine:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 shell=True,
                 creationflags=creation_flags
             )
@@ -329,7 +333,7 @@ class WorkflowEngine:
             result.output = '\n'.join(output_lines)
             result.raw_output = result.output
             
-            if self._process.returncode == 0 or result.findings:
+            if self._process.returncode == 0 or result.findings or output_lines:
                 result.status = StageStatus.COMPLETED
                 self._emit("stage_completed", stage.id, result)
             else:

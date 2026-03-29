@@ -92,6 +92,10 @@ desktop.ini
 *.exe
 !WebSecToolkit.exe
 
+# Tools (too large for git)
+tools/nmap/
+tools/hashcat/
+
 # Temporary files
 *.tmp
 *.temp
