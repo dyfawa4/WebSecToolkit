@@ -1,4 +1,6 @@
 import sys
+import os
+import webbrowser
 from typing import Dict, Optional
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -34,7 +36,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("WebSec Toolkit - Web安全集成工具")
         self.setMinimumSize(1200, 800)
         self.resize(1400, 900)
-        self.setStyleSheet(StyleSheet.THEME)
+        
+        config = load_config()
+        theme = config.get("theme", "dark")
+        self.setStyleSheet(StyleSheet.get_theme(dark=(theme == "dark")))
         
         self.setFont(QFont("Microsoft YaHei", 10))
     
@@ -484,6 +489,14 @@ class MainWindow(QMainWindow):
     
     def _show_docs(self):
         self._status_label.setText("打开文档...")
+        
+        github_url = "https://github.com/dyfawa4/WebSecToolkit"
+        
+        try:
+            webbrowser.open(github_url)
+            self._status_label.setText("已打开文档")
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"无法打开文档: {str(e)}")
     
     def resizeEvent(self, event):
         super().resizeEvent(event)

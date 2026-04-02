@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QListView
 )
 from PyQt6.QtCore import Qt
+from gui.widgets.styled_widgets import setup_combo_style
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "config", "config.json")
 
@@ -88,12 +89,11 @@ class SettingsDialog(QDialog):
         button_layout.addStretch()
         
         save_btn = QPushButton("保存")
-        save_btn.setFixedWidth(80)
+        save_btn.setObjectName("primaryButton")
         save_btn.clicked.connect(self._save_settings)
         
         cancel_btn = QPushButton("取消")
         cancel_btn.setObjectName("secondaryButton")
-        cancel_btn.setFixedWidth(80)
         cancel_btn.clicked.connect(self.reject)
         
         button_layout.addWidget(save_btn)
@@ -251,6 +251,7 @@ class SettingsDialog(QDialog):
     def _setup_combo(self, combo: QComboBox, items: list):
         combo.setView(QListView())
         combo.addItems(items)
+        setup_combo_style(combo)
     
     def _browse_tool(self, input_widget: QLineEdit):
         file_path, _ = QFileDialog.getOpenFileName(self, "选择工具路径")
@@ -316,7 +317,7 @@ class AboutDialog(QDialog):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
         
-        version = QLabel("版本 v1.01")
+        version = QLabel("版本 v1.3.0")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version)
         
@@ -330,7 +331,7 @@ class AboutDialog(QDialog):
         
         layout.addStretch()
         
-        copyright_label = QLabel("© 2024 Security Team")
+        copyright_label = QLabel("© 2026 Security Team")
         copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(copyright_label)
         

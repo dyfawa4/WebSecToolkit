@@ -11,11 +11,31 @@
 
 **WebSec Toolkit** is a comprehensive Web Security Integrated Tool designed for penetration testers, security researchers, and bug bounty hunters. It provides a user-friendly GUI interface that integrates multiple popular security tools, enabling efficient security assessments and vulnerability discovery.
 
-![Version](https://img.shields.io/badge/Version-v1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-v1.2.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.6+-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+### What's New in v1.2.0
+
+#### 🚀 One-Click Penetration Testing
+- **Automated Workflow**: Input a target URL and let the toolkit automatically execute a comprehensive security assessment
+- **Multiple Scan Modes**: Quick (5 min), Standard (15 min), Deep (60 min), and Custom modes
+- **21 Scan Stages**: Port scanning, fingerprinting, directory discovery, vulnerability scanning, and more
+- **Real-time Progress**: Monitor scan progress and findings in real-time
+- **Auto Report Generation**: Generate professional HTML/Markdown/JSON reports automatically
+
+#### 🌐 Internationalization Support
+- **Multi-language**: Full support for Chinese (zh_CN) and English (en)
+- **Dynamic Switching**: Change language without restarting the application
+
+#### 🔧 Bug Fixes & Improvements
+- Fixed language switching functionality
+- Fixed settings not being applied to scan modules
+- Improved tool detection and availability checking
+- Enhanced workflow engine with better error handling
+- Fixed encoding issues on Windows systems
 
 ### Features
 
@@ -34,7 +54,7 @@
 - **RCE**: Remote Code Execution testing
 - **SSRF**: Server-Side Request Forgery
 - **XXE**: XML External Entity injection
-- **SSTI**: Server-Side Template Injection
+- **SSTI**: Server-Side Template Injection (SSTImap, Fenjing)
 - **CSRF**: Cross-Site Request Forgery analysis
 - **API Security**: API vulnerability testing
 - **Framework Vulnerabilities**: Common framework exploits
@@ -91,7 +111,7 @@
 - **Report Generation**: AI-assisted report writing
 - **Chat Interface**: Interactive security consultation
 
-#### �️ Utility Tools
+#### 🛠️ Utility Tools
 - **IP Tools**: IP address analysis and calculation
 - **HTTP Tools**: HTTP request building and testing
 - **JSON Tools**: JSON formatting and analysis
@@ -166,8 +186,8 @@ requests>=2.31.0
 cryptography>=41.0.0
 Pillow>=10.0.0
 reportlab>=4.0.0
-python-docx>=0.8.11
-markdown>=3.4.0
+python-docx>=1.1.0
+markdown>=3.5.0
 PyYAML>=6.0.0
 ```
 
@@ -204,26 +224,35 @@ PyYAML>=6.0.0
 
 ### Usage Guide
 
-#### 1. Tool Management
+#### 1. One-Click Penetration Testing
+1. Select "One-Click Pentest" from the sidebar
+2. Enter target URL (e.g., `https://example.com`)
+3. Select scan mode (Quick/Standard/Deep/Custom)
+4. Configure advanced options (proxy, timeout, threads)
+5. Click "Start Scan"
+6. Monitor progress and view findings in real-time
+7. Review generated report upon completion
+
+#### 2. Tool Management
 - Access via `Tools` → `Tool Management` menu
 - View all integrated tools and their status
 - Configure tool paths manually or use auto-detection
 - Download missing tools directly from the interface
 
-#### 2. Running Scans
+#### 3. Running Scans
 1. Select a module from the left sidebar
 2. Enter target URL/IP/domain
 3. Configure scan options
 4. Click "Start Scan" button
 5. View results in real-time
 
-#### 3. AI Assistant
+#### 4. AI Assistant
 1. Configure AI provider in Settings
 2. Enter API key for your preferred provider
 3. Use chat interface for security questions
 4. Enable auto-analysis for scan results
 
-#### 4. Report Generation
+#### 5. Report Generation
 1. Complete your security assessment
 2. Navigate to `File` → `Generate Report`
 3. Select report format (HTML/PDF/DOCX/MD)
@@ -249,22 +278,17 @@ Edit `config/tools.json` to configure tool paths:
 ```
 
 #### Application Settings
-Edit `config/settings.yaml` for application preferences:
+Edit `config/config.json` for application preferences:
 
-```yaml
-general:
-  theme: "dark"
-  language: "zh_CN"
-  auto_save: true
-  
-scan:
-  timeout: 300
-  max_threads: 10
-
-ai:
-  provider: "openai"
-  model: "gpt-4"
-  api_key: "your-api-key"
+```json
+{
+  "language": "zh_CN",
+  "theme": "dark",
+  "threads": 10,
+  "timeout": 30,
+  "proxy_enabled": false,
+  "http_proxy": ""
+}
 ```
 
 ### Project Structure
@@ -272,37 +296,46 @@ ai:
 ```
 WebSecToolkit/
 ├── config/                 # Configuration files
-│   ├── settings.yaml      # Application settings
-│   └── tools.json         # Tool configurations
+│   ├── config.json         # Application settings
+│   ├── tools.json          # Tool configurations
+│   └── settings.json       # User preferences
 ├── core/                   # Core functionality
-│   ├── engine.py          # Main engine
-│   ├── database.py        # Database operations
-│   ├── tool_manager.py    # Tool management
-│   └── ai_service.py      # AI service integration
+│   ├── engine.py           # Main engine
+│   ├── database.py         # Database operations
+│   ├── tool_manager.py     # Tool management
+│   ├── i18n.py             # Internationalization
+│   └── ai_service.py       # AI service integration
 ├── gui/                    # GUI components
-│   ├── main_window.py     # Main window
-│   ├── dialogs/           # Dialog windows
-│   └── widgets/           # Custom widgets
+│   ├── main_window.py      # Main window
+│   ├── dialogs/            # Dialog windows
+│   └── widgets/            # Custom widgets
 ├── modules/                # Security modules
-│   ├── recon.py           # Reconnaissance
-│   ├── web.py             # Web security
-│   ├── web_adv.py         # Advanced web security
-│   ├── vuln_scan.py       # Vulnerability scanning
-│   ├── password.py        # Password attacks
-│   ├── internal.py        # Internal network
-│   ├── internal_adv.py    # Advanced internal
-│   ├── ai_assistant.py    # AI assistant
-│   ├── payload.py         # Payload generation
-│   ├── payload_adv.py     # Advanced payloads
-│   ├── tools.py           # Utility tools
-│   ├── utils.py           # General utilities
-│   ├── proxy.py           # Proxy tools
-│   └── gen.py             # Generators
+│   ├── auto_pentest.py     # One-click penetration
+│   ├── workflow/           # Workflow engine
+│   │   ├── engine.py       # Workflow execution
+│   │   ├── stages.py       # Scan stages
+│   │   ├── result_parser.py# Result parsing
+│   │   └── report_generator.py
+│   ├── recon.py            # Reconnaissance
+│   ├── web.py              # Web security
+│   ├── web_adv.py          # Advanced web security
+│   ├── vuln_scan.py        # Vulnerability scanning
+│   ├── password.py         # Password attacks
+│   ├── internal.py         # Internal network
+│   ├── internal_adv.py     # Advanced internal
+│   ├── ai_assistant.py     # AI assistant
+│   ├── payload.py          # Payload generation
+│   ├── payload_adv.py      # Advanced payloads
+│   ├── tools.py            # Utility tools
+│   ├── utils.py            # General utilities
+│   ├── proxy.py            # Proxy tools
+│   └── gen.py              # Generators
 ├── tools/                  # External tools
+├── wordlists/              # Wordlists for scanning
 ├── payloads/               # Payload templates
 ├── templates/              # Report templates
 ├── main.py                 # Entry point
-├── WebSecToolkit.exe      # Compiled executable
+├── WebSecToolkit.exe       # Compiled executable
 └── requirements.txt        # Dependencies
 ```
 
@@ -348,6 +381,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **WebSec Toolkit** 是一款综合性的Web安全集成工具，专为渗透测试人员、安全研究人员和漏洞赏金猎人设计。它提供了友好的图形用户界面，集成了多种流行的安全工具，实现高效的安全评估和漏洞发现。
 
+### v1.2.0 新功能
+
+#### 🚀 一键渗透测试
+- **自动化工作流**: 输入目标URL，工具箱自动执行全面的安全评估
+- **多种扫描模式**: 快速(5分钟)、标准(15分钟)、深度(60分钟)、自定义模式
+- **21个扫描阶段**: 端口扫描、指纹识别、目录发现、漏洞扫描等
+- **实时进度**: 实时监控扫描进度和发现结果
+- **自动报告生成**: 自动生成专业的HTML/Markdown/JSON报告
+
+#### 🌐 国际化支持
+- **多语言**: 完整支持中文(zh_CN)和英文(en)
+- **动态切换**: 无需重启即可切换语言
+
+#### 🔧 问题修复与改进
+- 修复语言切换功能
+- 修复设置未应用到扫描模块的问题
+- 改进工具检测和可用性检查
+- 增强工作流引擎的错误处理
+- 修复Windows系统编码问题
+
 ### 功能特性
 
 #### 🔍 信息收集
@@ -365,7 +418,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **RCE**: 远程代码执行测试
 - **SSRF**: 服务端请求伪造
 - **XXE**: XML外部实体注入
-- **SSTI**: 服务端模板注入
+- **SSTI**: 服务端模板注入 (SSTImap, Fenjing)
 - **CSRF**: 跨站请求伪造分析
 - **API安全**: API漏洞测试
 - **框架漏洞**: 常见框架漏洞利用
@@ -497,8 +550,8 @@ requests>=2.31.0
 cryptography>=41.0.0
 Pillow>=10.0.0
 reportlab>=4.0.0
-python-docx>=0.8.11
-markdown>=3.4.0
+python-docx>=1.1.0
+markdown>=3.5.0
 PyYAML>=6.0.0
 ```
 
@@ -535,26 +588,35 @@ PyYAML>=6.0.0
 
 ### 使用指南
 
-#### 1. 工具管理
+#### 1. 一键渗透测试
+1. 从侧边栏选择"一键渗透"
+2. 输入目标URL（如 `https://example.com`）
+3. 选择扫描模式（快速/标准/深度/自定义）
+4. 配置高级选项（代理、超时、线程数）
+5. 点击"开始扫描"
+6. 实时监控进度和发现结果
+7. 完成后查看生成的报告
+
+#### 2. 工具管理
 - 通过 `工具` → `工具管理` 菜单访问
 - 查看所有集成工具及其状态
 - 手动配置工具路径或使用自动检测
 - 直接从界面下载缺失的工具
 
-#### 2. 执行扫描
+#### 3. 执行扫描
 1. 从左侧边栏选择模块
 2. 输入目标URL/IP/域名
 3. 配置扫描选项
 4. 点击"开始扫描"按钮
 5. 实时查看结果
 
-#### 3. AI助手
+#### 4. AI助手
 1. 在设置中配置AI提供商
 2. 输入您首选提供商的API密钥
 3. 使用聊天界面进行安全咨询
 4. 启用扫描结果自动分析
 
-#### 4. 生成报告
+#### 5. 生成报告
 1. 完成安全评估
 2. 导航到 `文件` → `生成报告`
 3. 选择报告格式（HTML/PDF/DOCX/MD）
@@ -580,61 +642,17 @@ PyYAML>=6.0.0
 ```
 
 #### 应用程序设置
-编辑 `config/settings.yaml` 配置应用偏好：
+编辑 `config/config.json` 配置应用偏好：
 
-```yaml
-general:
-  theme: "dark"
-  language: "zh_CN"
-  auto_save: true
-  
-scan:
-  timeout: 300
-  max_threads: 10
-
-ai:
-  provider: "openai"
-  model: "gpt-4"
-  api_key: "your-api-key"
-```
-
-### 项目结构
-
-```
-WebSecToolkit/
-├── config/                 # 配置文件
-│   ├── settings.yaml      # 应用设置
-│   └── tools.json         # 工具配置
-├── core/                   # 核心功能
-│   ├── engine.py          # 主引擎
-│   ├── database.py        # 数据库操作
-│   ├── tool_manager.py    # 工具管理
-│   └── ai_service.py      # AI服务集成
-├── gui/                    # 图形界面
-│   ├── main_window.py     # 主窗口
-│   ├── dialogs/           # 对话框
-│   └── widgets/           # 自定义控件
-├── modules/                # 安全模块
-│   ├── recon.py           # 信息收集
-│   ├── web.py             # Web安全
-│   ├── web_adv.py         # 高级Web安全
-│   ├── vuln_scan.py       # 漏洞扫描
-│   ├── password.py        # 密码攻击
-│   ├── internal.py        # 内网渗透
-│   ├── internal_adv.py    # 高级内网
-│   ├── ai_assistant.py    # AI助手
-│   ├── payload.py         # Payload生成
-│   ├── payload_adv.py     # 高级Payload
-│   ├── tools.py           # 实用工具
-│   ├── utils.py           # 通用工具
-│   ├── proxy.py           # 代理工具
-│   └── gen.py             # 生成器
-├── tools/                  # 外部工具
-├── payloads/               # Payload模板
-├── templates/              # 报告模板
-├── main.py                 # 程序入口
-├── WebSecToolkit.exe      # 编译后的可执行文件
-└── requirements.txt        # 依赖列表
+```json
+{
+  "language": "zh_CN",
+  "theme": "dark",
+  "threads": 10,
+  "timeout": 30,
+  "proxy_enabled": false,
+  "http_proxy": ""
+}
 ```
 
 ### 从源码构建
@@ -676,4 +694,4 @@ pyinstaller WebSecToolkit.spec --noconfirm
 
 If you find this project helpful, please consider giving it a ⭐️!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=dyfawa4/WebSecToolkit&type=Date)](https://star-history.com/#dyfawa4/WebSecToolkit&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=dyfawa4/WebSecToolkit&type=Date)](https://star-history.com/#dyfawa4/WebSecToolkit)

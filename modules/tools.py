@@ -217,6 +217,7 @@ class RepeaterWidget(BaseModuleWidget):
         raw_layout.addWidget(self._raw_request)
         
         parse_btn = QPushButton("解析请求")
+        parse_btn.setObjectName("secondaryButton")
         parse_btn.clicked.connect(self._parse_raw_request)
         raw_layout.addWidget(parse_btn)
         
@@ -533,9 +534,11 @@ class BaseEncoderWidget(BaseModuleWidget):
         btn_layout = QHBoxLayout()
         
         encode_btn = QPushButton("编码")
+        encode_btn.setObjectName("secondaryButton")
         encode_btn.clicked.connect(self._encode)
         
         decode_btn = QPushButton("解码")
+        decode_btn.setObjectName("secondaryButton")
         decode_btn.clicked.connect(self._decode)
         
         swap_btn = QPushButton("交换输入输出")
@@ -753,9 +756,11 @@ class URLEncoderWidget(BaseModuleWidget):
         btn_layout = QHBoxLayout()
         
         encode_btn = QPushButton("编码")
+        encode_btn.setObjectName("secondaryButton")
         encode_btn.clicked.connect(self._encode)
         
         decode_btn = QPushButton("解码")
+        decode_btn.setObjectName("secondaryButton")
         decode_btn.clicked.connect(self._decode)
         
         btn_layout.addWidget(encode_btn)
@@ -851,6 +856,7 @@ class HashCalcWidget(BaseModuleWidget):
         self._file_path = QLineEdit()
         self._file_path.setPlaceholderText("选择文件计算Hash")
         file_btn = QPushButton("选择文件")
+        file_btn.setObjectName("secondaryButton")
         file_btn.clicked.connect(self._select_file)
         file_layout.addWidget(self._file_path, 1)
         file_layout.addWidget(file_btn)
@@ -894,6 +900,7 @@ class HashCalcWidget(BaseModuleWidget):
         layout.addWidget(hmac_group)
         
         calc_btn = QPushButton("计算Hash")
+        calc_btn.setObjectName("primaryButton")
         calc_btn.clicked.connect(self._calculate)
         layout.addWidget(calc_btn)
         
@@ -1006,6 +1013,7 @@ class JWTEncoderWidget(BaseModuleWidget):
         decode_layout.addWidget(self._jwt_input)
         
         decode_btn = QPushButton("解码JWT")
+        decode_btn.setObjectName("secondaryButton")
         decode_btn.clicked.connect(self._decode_jwt)
         decode_layout.addWidget(decode_btn)
         
@@ -1046,6 +1054,7 @@ class JWTEncoderWidget(BaseModuleWidget):
         encode_layout.addLayout(secret_layout)
         
         encode_btn = QPushButton("生成JWT")
+        encode_btn.setObjectName("secondaryButton")
         encode_btn.clicked.connect(self._encode_jwt)
         encode_layout.addWidget(encode_btn)
         
@@ -1217,9 +1226,11 @@ class CryptoWidget(BaseModuleWidget):
         btn_layout = QHBoxLayout()
         
         encrypt_btn = QPushButton("加密")
+        encrypt_btn.setObjectName("secondaryButton")
         encrypt_btn.clicked.connect(self._encrypt)
         
         decrypt_btn = QPushButton("解密")
+        decrypt_btn.setObjectName("secondaryButton")
         decrypt_btn.clicked.connect(self._decrypt)
         
         gen_key_btn = QPushButton("生成密钥")
@@ -1360,9 +1371,11 @@ class ClassicCipherWidget(BaseModuleWidget):
         btn_layout = QHBoxLayout()
         
         encrypt_btn = QPushButton("加密")
+        encrypt_btn.setObjectName("secondaryButton")
         encrypt_btn.clicked.connect(self._encrypt)
         
         decrypt_btn = QPushButton("解密")
+        decrypt_btn.setObjectName("secondaryButton")
         decrypt_btn.clicked.connect(self._decrypt)
         
         crack_btn = QPushButton("暴力破解")

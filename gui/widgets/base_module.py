@@ -4,10 +4,10 @@ from PyQt6.QtWidgets import (
     QGroupBox, QScrollArea, QSplitter, QTableWidget,
     QTableWidgetItem, QHeaderView, QTabWidget, QProgressBar,
     QSpinBox, QFileDialog, QMessageBox, QListView, QDialog,
-    QListWidget, QDialogButtonBox, QFormLayout, QSizePolicy
+    QListWidget, QDialogButtonBox, QFormLayout, QSizePolicy, QApplication
 )
-from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QThread, QMetaObject, QTimer, QPropertyAnimation, QRect, Q_ARG
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QThread, QMetaObject, QTimer, QPropertyAnimation, QRect, Q_ARG, QEvent
+from PyQt6.QtGui import QFont, QColor, QPalette
 from typing import Optional, Dict, Any, List, Callable
 import threading
 import os
@@ -28,11 +28,11 @@ class LogLevel(Enum):
 @dataclass
 class LogColors:
     COLORS = {
-        LogLevel.INFO: "#1E66F5",
-        LogLevel.WARNING: "#DF8E1D",
-        LogLevel.ERROR: "#D20F39",
-        LogLevel.SUCCESS: "#40A02B",
-        LogLevel.DEBUG: "#8C8FA1"
+        LogLevel.INFO: "#89b4fa",
+        LogLevel.WARNING: "#f9e2af",
+        LogLevel.ERROR: "#f38ba8",
+        LogLevel.SUCCESS: "#a6e3a1",
+        LogLevel.DEBUG: "#6c7086"
     }
 
 
@@ -208,39 +208,39 @@ class BaseModuleWidget(QWidget):
     COMMON_STYLES = """
         QScrollArea { border: none; background-color: transparent; }
         QScrollBar:vertical {
-            background-color: #F3F4F6;
-            width: 10px;
+            background-color: transparent;
+            width: 8px;
             margin: 0px;
         }
         QScrollBar::handle:vertical {
-            background-color: #D1D5DB;
-            border-radius: 5px;
+            background-color: #45475a;
+            border-radius: 4px;
             min-height: 30px;
         }
         QScrollBar::handle:vertical:hover {
-            background-color: #9CA3AF;
+            background-color: #585b70;
         }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
             height: 0px;
         }
         QScrollBar:horizontal {
-            background-color: #F3F4F6;
-            height: 10px;
+            background-color: transparent;
+            height: 8px;
             margin: 0px;
         }
         QScrollBar::handle:horizontal {
-            background-color: #D1D5DB;
-            border-radius: 5px;
+            background-color: #45475a;
+            border-radius: 4px;
             min-width: 30px;
         }
         QTabWidget::pane {
-            background-color: #FFFFFF;
-            border: 1px solid #E5E7EB;
+            background-color: #1e1e2e;
+            border: 1px solid #313244;
             border-radius: 8px;
         }
         QTabBar::tab {
-            background-color: #F3F4F6;
-            color: #6B7280;
+            background-color: #181825;
+            color: #6c7086;
             padding: 10px 20px;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
@@ -248,77 +248,80 @@ class BaseModuleWidget(QWidget):
             min-width: 80px;
         }
         QTabBar::tab:selected {
-            background-color: #FFFFFF;
-            color: #1F2937;
-            border: 1px solid #E5E7EB;
-            border-bottom: none;
+            background-color: #1e1e2e;
+            color: #89b4fa;
+            border: 1px solid #313244;
+            border-bottom: 2px solid #89b4fa;
         }
-        QTabBar::tab:hover {
-            background-color: #E5E7EB;
-            color: #1F2937;
+        QTabBar::tab:hover:!selected {
+            background-color: #313244;
+            color: #cdd6f4;
         }
         QTableWidget {
-            background-color: #FFFFFF;
-            color: #1F2937;
-            border: 1px solid #E5E7EB;
+            background-color: #11111b;
+            color: #cdd6f4;
+            border: 1px solid #313244;
             border-radius: 8px;
-            gridline-color: #E5E7EB;
+            gridline-color: #313244;
         }
         QTableWidget::item {
             padding: 8px;
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: 1px solid #313244;
         }
         QTableWidget::item:selected {
-            background-color: #E5E7EB;
+            background-color: #45475a;
+            color: #cdd6f4;
         }
         QHeaderView::section {
-            background-color: #F9FAFB;
-            color: #6B7280;
+            background-color: #181825;
+            color: #89b4fa;
             padding: 10px;
             border: none;
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: 2px solid #313244;
             font-weight: bold;
         }
         QHeaderView::section:horizontal {
-            border-right: 1px solid #E5E7EB;
+            border-right: 1px solid #313244;
         }
         QHeaderView::section:last:horizontal {
             border-right: none;
         }
         QTextEdit {
-            background-color: #FFFFFF;
-            color: #1F2937;
-            border: 1px solid #E5E7EB;
+            background-color: #11111b;
+            color: #cdd6f4;
+            border: 1px solid #313244;
             border-radius: 8px;
             padding: 10px;
             font-family: Consolas, Monaco, monospace;
             font-size: 10pt;
         }
         QProgressBar {
-            background-color: #F3F4F6;
-            color: #1F2937;
-            border: 1px solid #E5E7EB;
-            border-radius: 8px;
-            padding: 2px;
+            background-color: #11111b;
+            color: transparent;
+            border: 1px solid #313244;
+            border-radius: 6px;
             text-align: center;
-            min-height: 20px;
+            min-height: 8px;
+            max-height: 8px;
         }
         QProgressBar::chunk {
-            background-color: #4285F4;
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #89b4fa, stop:1 #74c7ec);
             border-radius: 6px;
         }
         QGroupBox {
             font-weight: bold;
-            border: 1px solid #E5E7EB;
+            color: #cdd6f4;
+            border: 1px solid #313244;
             border-radius: 8px;
             margin-top: 10px;
-            padding-top: 10px;
+            padding-top: 20px 15px 15px 15px;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
             left: 15px;
             padding: 0 8px;
-            color: #374151;
+            color: #89b4fa;
         }
     """
     
@@ -402,46 +405,94 @@ class BaseModuleWidget(QWidget):
     def _setup_combo(self, combo: QComboBox, items: list = None):
         combo.setStyleSheet("""
             QComboBox {
-                background-color: #FFFFFF;
-                color: #1F2937;
-                border: 1px solid #D1D5DB;
+                background-color: #11111b;
+                color: #cdd6f4;
+                border: 1px solid #313244;
                 border-radius: 6px;
                 padding: 8px 12px;
                 min-height: 20px;
             }
             QComboBox:hover {
-                border-color: #9CA3AF;
+                border-color: #585b70;
             }
             QComboBox:focus {
-                border-color: #4285F4;
+                border-color: #89b4fa;
             }
             QComboBox::drop-down {
                 border: none;
-                width: 0px;
+                width: 30px;
             }
             QComboBox::down-arrow {
                 image: none;
-                width: 0px;
-                height: 0px;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #6c7086;
             }
             QComboBox QAbstractItemView {
-                background-color: #FFFFFF;
-                color: #1F2937;
-                border: 1px solid #E5E7EB;
-                selection-background-color: #E5E7EB;
-                selection-color: #1F2937;
+                background-color: #181825;
+                color: #cdd6f4;
+                selection-background-color: #45475a;
+                selection-color: #cdd6f4;
                 outline: none;
+                border: none;
+                margin: 0px;
+                padding: 4px;
             }
             QComboBox QAbstractItemView::item {
+                background-color: #181825;
+                color: #cdd6f4;
                 padding: 8px 12px;
                 min-height: 24px;
             }
             QComboBox QAbstractItemView::item:hover {
-                background-color: #F3F4F6;
+                background-color: #313244;
+                color: #cdd6f4;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #45475a;
+                color: #89b4fa;
             }
         """)
+        
         if items:
             combo.addItems(items)
+        
+        try:
+            view = combo.view()
+            if view:
+                view.setStyleSheet("""
+                    QListView {
+                        background-color: #181825;
+                        color: #cdd6f4;
+                        border: none;
+                        outline: none;
+                    }
+                    QListView::item {
+                        background-color: #181825;
+                        color: #cdd6f4;
+                        padding: 8px 12px;
+                        min-height: 24px;
+                    }
+                    QListView::item:hover {
+                        background-color: #313244;
+                    }
+                    QListView::item:selected {
+                        background-color: #45475a;
+                        color: #89b4fa;
+                    }
+                """)
+                
+                parent = view.parentWidget()
+                if parent:
+                    parent.setAutoFillBackground(True)
+                    palette = parent.palette()
+                    palette.setColor(QPalette.ColorRole.Window, QColor("#181825"))
+                    palette.setColor(QPalette.ColorRole.WindowText, QColor("#cdd6f4"))
+                    palette.setColor(QPalette.ColorRole.Base, QColor("#181825"))
+                    parent.setPalette(palette)
+                    parent.setStyleSheet("background-color: #181825;")
+        except Exception:
+            pass
     
     def _setup_spinbox(self, spinbox: QSpinBox, suffix: str = ""):
         if suffix:
@@ -482,7 +533,7 @@ class BaseModuleWidget(QWidget):
         
         self._file_btn = QPushButton("从文件导入")
         self._file_btn.setObjectName("secondaryButton")
-        self._file_btn.setFixedWidth(100)
+        self._file_btn.setMinimumWidth(100)
         self._file_btn.clicked.connect(self._import_targets)
         
         target_input_layout.addWidget(self._target_input, 1)
@@ -591,9 +642,9 @@ class BaseModuleWidget(QWidget):
             try:
                 widget.setEnabled(not locked)
                 if locked:
-                    widget.setStyleSheet(widget.styleSheet() + "; background-color: #F3F4F6;")
+                    widget.setStyleSheet(widget.styleSheet() + "; background-color: #313244;")
                 else:
-                    widget.setStyleSheet(widget.styleSheet().replace("; background-color: #F3F4F6;", ""))
+                    widget.setStyleSheet(widget.styleSheet().replace("; background-color: #313244;", ""))
             except:
                 pass
     
@@ -603,6 +654,7 @@ class BaseModuleWidget(QWidget):
         
         layout = QHBoxLayout(header)
         layout.setContentsMargins(10, 5, 10, 5)
+        layout.setSpacing(8)
         
         title_label = QLabel(self.module_name)
         title_label.setObjectName("titleLabel")
@@ -611,13 +663,12 @@ class BaseModuleWidget(QWidget):
         layout.addStretch()
         
         self._start_btn = QPushButton("开始")
-        self._start_btn.setFixedWidth(100)
+        self._start_btn.setObjectName("primaryButton")
         self._start_btn.clicked.connect(self._on_start_scan)
         layout.addWidget(self._start_btn)
         
         self._stop_btn = QPushButton("停止")
         self._stop_btn.setObjectName("dangerButton")
-        self._stop_btn.setFixedWidth(80)
         self._stop_btn.setEnabled(False)
         self._stop_btn.clicked.connect(self._on_stop_scan)
         layout.addWidget(self._stop_btn)

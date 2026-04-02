@@ -121,52 +121,6 @@ MODULE_CATEGORIES = {
 }
 
 
-class RunningIndicator(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setFixedSize(8, 8)
-        self._opacity = 1.0
-        self._increasing = False
-        
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._animate)
-        
-        self._color = QColor("#22C55E")
-    
-    def start_animation(self):
-        self._timer.start(50)
-    
-    def stop_animation(self):
-        self._timer.stop()
-        self._opacity = 1.0
-        self.update()
-    
-    def _animate(self):
-        if self._increasing:
-            self._opacity += 0.05
-            if self._opacity >= 1.0:
-                self._opacity = 1.0
-                self._increasing = False
-        else:
-            self._opacity -= 0.05
-            if self._opacity <= 0.3:
-                self._opacity = 0.3
-                self._increasing = True
-        self.update()
-    
-    def paintEvent(self, event):
-        from PyQt6.QtGui import QPainter, QBrush, QPen
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
-        color = QColor(self._color)
-        color.setAlphaF(self._opacity)
-        
-        painter.setBrush(QBrush(color))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawEllipse(0, 0, 8, 8)
-
-
 class NavButton(QPushButton):
     clicked_with_id = pyqtSignal(str)
 
@@ -175,39 +129,20 @@ class NavButton(QPushButton):
         self.module_id = module_id
         self._text = text
         self._is_running = False
-        self._indicator = None
         self._setup_ui()
         self.clicked.connect(self._on_clicked)
 
     def _setup_ui(self):
         self.setObjectName("navButton")
         self.setCheckable(True)
-        self.setFixedHeight(42)
+        self.setFixedHeight(36)
         self.setMinimumWidth(200)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._update_text()
-        
-        self.setStyleSheet("""
-            QPushButton {
-                text-align: left;
-                padding-left: 10px;
-                border: none;
-                background: transparent;
-                color: #374151;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 0, 0, 0.05);
-            }
-            QPushButton:checked {
-                background-color: #DBEAFE;
-                border-left: 3px solid #3B82F6;
-                color: #1E40AF;
-            }
-        """)
 
     def _update_text(self):
         if self._is_running:
-            self.setText(f"  {self._text}  ●")
+            self.setText(f"  ● {self._text}")
         else:
             self.setText(f"  {self._text}")
 
@@ -216,15 +151,13 @@ class NavButton(QPushButton):
         self._update_text()
         
         if running:
-            self.setStyleSheet("""
-                QPushButton {
-                    background-color: #DCFCE7;
-                    border-left: 3px solid #22C55E;
-                    color: #166534;
-                }
-            """)
+            self.setProperty("running", True)
+            self.style().unpolish(self)
+            self.style().polish(self)
         else:
-            self.setStyleSheet("")
+            self.setProperty("running", False)
+            self.style().unpolish(self)
+            self.style().polish(self)
     
     def _on_clicked(self):
         self.clicked_with_id.emit(self.module_id)
@@ -235,8 +168,8 @@ class Sidebar(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._buttons = {}
-        self._running_modules = set()
+        self._buttons: Dict[str, NavButton] = {}
+        self._running_modules: set = set()
         self._setup_ui()
 
     def _setup_ui(self):
@@ -254,10 +187,10 @@ class Sidebar(QWidget):
         header_layout.setContentsMargins(20, 15, 20, 15)
 
         title = QLabel("WebSec Toolkit")
-        title.setObjectName("titleLabel")
+        title.setObjectName("sidebarTitle")
 
-        version = QLabel("v1.01")
-        version.setStyleSheet("font-size: 11px;")
+        version = QLabel("v1.3.0")
+        version.setObjectName("sidebarVersion")
 
         header_layout.addWidget(title)
         header_layout.addWidget(version)
@@ -274,14 +207,14 @@ class Sidebar(QWidget):
             }
             QScrollBar:vertical {
                 background: transparent;
-                width: 6px;
+                width: 4px;
             }
             QScrollBar::handle:vertical {
-                background: #D1D5DB;
-                border-radius: 3px;
+                background: #45475a;
+                border-radius: 2px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #9CA3AF;
+                background: #585b70;
             }
         """)
 
@@ -289,12 +222,12 @@ class Sidebar(QWidget):
         scroll_content.setStyleSheet("background: transparent;")
         scroll_layout = QVBoxLayout(scroll_content)
         scroll_layout.setContentsMargins(10, 10, 10, 10)
-        scroll_layout.setSpacing(5)
+        scroll_layout.setSpacing(2)
 
         for category, modules in MODULE_CATEGORIES.items():
             category_label = QLabel(category)
             category_label.setObjectName("categoryLabel")
-            category_label.setMinimumHeight(30)
+            category_label.setMinimumHeight(28)
             scroll_layout.addWidget(category_label)
 
             for module_name, module_id in modules:
@@ -303,7 +236,7 @@ class Sidebar(QWidget):
                 self._buttons[module_id] = btn
                 scroll_layout.addWidget(btn)
 
-            scroll_layout.addSpacing(10)
+            scroll_layout.addSpacing(8)
 
         scroll_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         scroll.setWidget(scroll_content)

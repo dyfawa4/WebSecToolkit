@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from gui.widgets.styled_widgets import setup_combo_style
 import json
 from datetime import datetime
 
@@ -41,6 +42,7 @@ class ReportPreviewDialog(QDialog):
 
         self._format_combo = QComboBox()
         self._format_combo.addItems(["JSON", "HTML", "TXT"])
+        setup_combo_style(self._format_combo)
         self._format_combo.currentTextChanged.connect(self._update_preview)
         format_layout.addWidget(self._format_combo)
 

@@ -97,10 +97,11 @@ class AIAssistantWidget(BaseModuleWidget):
         status_form.addRow("状态:", self._status_label)
         
         self._provider_combo = QComboBox()
-        self._provider_combo.addItem("选择提供商...")
+        self._setup_combo(self._provider_combo)
         status_form.addRow("当前提供商:", self._provider_combo)
         
         self._refresh_status_btn = QPushButton("刷新状态")
+        self._refresh_status_btn.setObjectName("secondaryButton")
         self._refresh_status_btn.clicked.connect(self._refresh_status)
         status_form.addRow(self._refresh_status_btn)
         
@@ -133,6 +134,7 @@ class AIAssistantWidget(BaseModuleWidget):
         provider_form.addRow("模型:", self._new_provider_model)
         
         add_provider_btn = QPushButton("添加提供商")
+        add_provider_btn.setObjectName("primaryButton")
         add_provider_btn.clicked.connect(self._add_provider)
         provider_form.addRow(add_provider_btn)
         
@@ -183,10 +185,12 @@ class AIAssistantWidget(BaseModuleWidget):
         input_layout.addWidget(self._chat_input)
         
         self._send_btn = QPushButton("发送")
+        self._send_btn.setObjectName("primaryButton")
         self._send_btn.clicked.connect(self._send_message)
         input_layout.addWidget(self._send_btn)
         
         self._clear_btn = QPushButton("清空")
+        self._clear_btn.setObjectName("secondaryButton")
         self._clear_btn.clicked.connect(self._clear_chat)
         input_layout.addWidget(self._clear_btn)
         
@@ -197,14 +201,17 @@ class AIAssistantWidget(BaseModuleWidget):
         quick_layout = QHBoxLayout(quick_group)
         
         analyze_btn = QPushButton("分析当前结果")
+        analyze_btn.setObjectName("secondaryButton")
         analyze_btn.clicked.connect(self._analyze_current_result)
         quick_layout.addWidget(analyze_btn)
         
         suggest_btn = QPushButton("获取建议")
+        suggest_btn.setObjectName("secondaryButton")
         suggest_btn.clicked.connect(self._get_suggestions)
         quick_layout.addWidget(suggest_btn)
         
         explain_btn = QPushButton("解释概念")
+        explain_btn.setObjectName("secondaryButton")
         explain_btn.clicked.connect(self._explain_concept)
         quick_layout.addWidget(explain_btn)
         
@@ -236,10 +243,12 @@ class AIAssistantWidget(BaseModuleWidget):
         analyze_btn_layout = QHBoxLayout()
         
         self._analyze_btn = QPushButton("开始分析")
+        self._analyze_btn.setObjectName("primaryButton")
         self._analyze_btn.clicked.connect(self._start_analysis)
         analyze_btn_layout.addWidget(self._analyze_btn)
         
         self._generate_report_btn = QPushButton("生成报告")
+        self._generate_report_btn.setObjectName("secondaryButton")
         self._generate_report_btn.clicked.connect(self._generate_report)
         analyze_btn_layout.addWidget(self._generate_report_btn)
         
@@ -270,14 +279,17 @@ class AIAssistantWidget(BaseModuleWidget):
         history_btn_layout = QHBoxLayout()
         
         refresh_history_btn = QPushButton("刷新")
+        refresh_history_btn.setObjectName("secondaryButton")
         refresh_history_btn.clicked.connect(self._refresh_history)
         history_btn_layout.addWidget(refresh_history_btn)
         
         clear_history_btn = QPushButton("清空历史")
+        clear_history_btn.setObjectName("secondaryButton")
         clear_history_btn.clicked.connect(self._clear_history)
         history_btn_layout.addWidget(clear_history_btn)
         
         analyze_selected_btn = QPushButton("分析选中项")
+        analyze_selected_btn.setObjectName("secondaryButton")
         analyze_selected_btn.clicked.connect(self._analyze_selected_history)
         history_btn_layout.addWidget(analyze_selected_btn)
         
@@ -324,15 +336,13 @@ class AIAssistantWidget(BaseModuleWidget):
         
         if status["configured"]:
             self._status_label.setText("已配置")
-            self._status_label.setStyleSheet("font-weight: bold; color: green;")
+            self._status_label.setStyleSheet("font-weight: bold; color: #a6e3a1;")
         else:
             self._status_label.setText("未配置")
-            self._status_label.setStyleSheet("font-weight: bold; color: red;")
+            self._status_label.setStyleSheet("font-weight: bold; color: #f38ba8;")
         
-        self._provider_combo.clear()
-        self._provider_combo.addItem("选择提供商...")
-        for provider in status["providers"]:
-            self._provider_combo.addItem(provider)
+        providers = ["选择提供商..."] + status["providers"]
+        self._setup_combo(self._provider_combo, providers)
         
         if status["default_provider"]:
             index = self._provider_combo.findText(status["default_provider"])

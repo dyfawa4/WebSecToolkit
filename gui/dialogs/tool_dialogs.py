@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QColor
+from gui.widgets.styled_widgets import setup_combo_style
 import os
 import shutil
 import sys
@@ -287,6 +288,7 @@ class ToolManagerDialog(QDialog):
         self._category_combo.addItem("全部", "all")
         for cat_id, cat_name in self._categories.items():
             self._category_combo.addItem(cat_name, cat_id)
+        setup_combo_style(self._category_combo)
         self._category_combo.currentIndexChanged.connect(self._filter_by_category)
         filter_layout.addWidget(self._category_combo)
         
